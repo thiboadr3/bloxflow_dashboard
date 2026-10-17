@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test automation/*.test.mjs",
+    "test": "node --test automation/*.test.mjs tests/*.test.mjs",
     "build:worker": "node automation/build.mjs",
     "check": "node --check dist/werkruimte.js"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

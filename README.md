@@ -29,3 +29,7 @@ De HVAC-dienst draait in Supabase, onafhankelijk van deze frontend en van de lok
 De migraties en `supabase/ACTIVATION.txt` documenteren het bestaande project. Voer import-, vrijgave- of activatiescripts niet opnieuw uit als gewone deploystap. De oorspronkelijke databasestructuur en bedrijfsgegevens zijn niet als algemene nieuwe-installatiebootstrap meegeleverd. Oudere statusnotities zijn historisch; zie de laatste activeringsnotities en `automation/README.txt`.
 
 Geen prospectexports, Gmail-tokens, OAuth-clientgeheimen of workergeheimen worden in deze repo opgeslagen.
+
+## Aanmelden met wachtwoord
+
+De werkruimte gebruikt `signInWithPassword`. Kies bij de eerste keer ‘Wachtwoord instellen of vergeten’ om een herstelmail aan het eigenaaraccount aan te vragen. Open de link op hetzelfde toestel en in dezelfde browser (PKCE). Het gevalideerde PASSWORD_RECOVERY-event opent het instelformulier; de eigenaar stelt zelf minimaal 12 tekens in. Er is geen openbaar registratieformulier. De terugkeer-URL blijft het reeds toegestane `/werkruimte`. Wachtwoorden staan niet in broncode of browseropslag van de app.
