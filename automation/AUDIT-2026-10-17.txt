@@ -1,0 +1,31 @@
+Bloxflow outreach audit — 17 October 2026
+
+Verified corrections deployed to Supabase:
+- Fixed ambiguous prospect/job SQL aliases in bloxflow_reserve. This defect was uncovered by the real database pipeline test, not by mocks.
+- Queue enrollment now runs before the working-day/hour dispatch gate. Approved, verified records can accumulate over the weekend.
+- Recheck the working-day/hour gate immediately before dispatch; an expired window defers instead of permanently stopping the job.
+- Sector ready count uses the sender's actual eligibility conditions and excludes first contacts already dispatched, stopped/completed/uncertain jobs and system tests. Added confirmed mail-1 and reply counts; old approvals with null approved_at are correctly flagged for reapproval.
+- Website email verification ignores old campaign approvals. Redirected homepages still discover contact links.
+- Gmail search results must match sender address/company domain or known thread before stopping a job. Unrelated newsletters cannot be assigned merely because a company name appears.
+- HTML-only incoming messages retain readable full content and opt-out meaning.
+- Inbox uses a stable timestamp + Gmail-ID cursor so equal timestamps do not lose messages.
+- is_test jobs never dispatch and are excluded from production dashboard/inbox totals.
+
+Evidence:
+- 27 Node tests passing: engine, email verification, MIME/content, authentication and recovery behavior.
+- Full SQL pipeline: query 092a7bfa-cc58-4a92-9dca-f987b0313e3f. PASS for owner review RPC -> evidence RPC -> real eligibility/counter -> weekend enrollment without dispatch -> mail steps 1/2/3 -> per-step and total caps -> threading reference persistence -> idempotent sent outcome -> three-business-day scheduling -> no mail 4 -> reply/suppression stop -> owner inbox -> equal-timestamp pagination -> sender-role privileges. Test data and temporary Monday clock/function definitions all rolled back.
+- Browser: owner-approved synthetic record 20261017-eeee-4000-8000-000000000001 in actual Netlify UI. Real worker confirmed public address on https://web.bloxflow.be/, created queued job, HTTP 200 checked, no runtime error. Dashboard visibly showed 1 ready / 1 queued.
+- User explicitly approved sending a test incoming message between their own accounts. Actual Gmail message received, worker stored it as opt_out and changed synthetic job to replied. Netlify Antwoorden visibly showed full content and Opvolging gestopt. See the retained is_test job for exact immutable Gmail evidence; no reliance on fabricated reply data for this check.
+- Synthetic record then soft-archived; its job and incoming message remain for audit under is_test=true and do not pollute production totals. No real prospect review was modified.
+- Anonymous HTTP requests to prospects, outreach_messages, sector summary, inbox and reserve all denied (401).
+- Actual mail transport/template/thread checks: earlier three owner-only messages passed (test 57b753f1-32a0-4216-9403-959ec2f35ed7). No prospect emails were sent as part of this audit.
+
+Final read:
+- Sending enabled/verified, last_error=NULL, current Gmail synchronization.
+- Limits 200 per step / 600 total, workdays 08–18 Europe/Brussels; 3 + 3 business days between messages.
+- HVAC active 2732; needs_review 2244; old approved 99; needs_reapproval 99; ready for first mail 0; no active synthetic record.
+- Ready 0 is now accurate: there are no new owner approvals in the campaign after removing the system test. Old approvals do not silently enroll.
+
+Limits of evidence:
+- Production working-day sending was simulated inside a rolled-back transaction because the audit occurred on Saturday. No real prospect received all three emails in accelerated time.
+- Gmail transport was tested with real owner-only messages and a real incoming message; database transitions and scheduling were tested with real PostgreSQL functions and simulated Gmail IDs. External recipient delivery/spam placement is not guaranteed by application tests.

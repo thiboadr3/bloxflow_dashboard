@@ -1,3 +1,7 @@
+# Historical setup notes
+
+Current verified behavior and audit: `../automation/AUDIT-2026-10-17.txt` and the latest entries in `ACTIVATION.txt`. The dated setup notes below describe earlier states, not the active campaign.
+
 # Bloxflow Supabase
 
 Project: https://supabase.com/dashboard/project/dzygpjozhixnkbtfupqj

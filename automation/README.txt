@@ -34,3 +34,5 @@ node --check dist/werkruimte.js
 node automation/build.mjs (rebuild standalone Edge entry after source edits)
 
 Scheduling in Supabase means no Windows PC/Codex needs to stay open once tested and activated. Cloud availability still matters; downtime must not cause catchup bursts.
+
+AUDIT UPDATE 17 October 2026: migrations 014/015 and updated worker deployed. Full database pipeline, real UI approval/website verification/weekend queue and real own-account incoming message/opt-out stop verified. System test record archived and test traffic excluded from production counts. 27 Node tests pass. See AUDIT-2026-10-17.txt for exact evidence and limits. Supersedes earlier counter/readiness notes.
