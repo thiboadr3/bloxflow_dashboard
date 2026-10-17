@@ -6,7 +6,7 @@ Werkruimte voor het beoordelen van prospects, sectoroverzichten en het lezen van
 
 Importeer deze GitHub-repo in Netlify. De publicatiemap `dist` en routes staan in `netlify.toml`; er is geen buildstap nodig. De hoofdpagina verwijst naar `/werkruimte`.
 
-Na de eerste publicatie: voeg de exacte nieuwe URL `https://<sitenaam>.netlify.app/werkruimte` toe aan de toegelaten redirect-URL's in Supabase Authentication → URL Configuration. Behoud de bestaande URL zolang de oude werkruimte gebruikt wordt. Test vervolgens aanmelden via e-maillink en toegang tot het onderdeel Antwoorden. De nieuwe Netlify-URL is nog niet gekoppeld of gepubliceerd door deze repository-upload.
+Na de eerste publicatie: voeg de exacte nieuwe URL `https://<sitenaam>.netlify.app/werkruimte` toe aan de toegelaten redirect-URL's in Supabase Authentication → URL Configuration. Behoud de bestaande URL zolang de oude werkruimte gebruikt wordt. Test vervolgens aanmelden via e-maillink en toegang tot het onderdeel Antwoorden. Live werkruimte: https://bloxflow-dashboard.netlify.app/werkruimte. Dit exacte terugkeeradres is op 17 oktober 2026 met toestemming van de eigenaar toegevoegd aan Supabase Authentication. De hoofdpagina toont eveneens de echte aanmeldomgeving; de oude demoselectie is verwijderd.
 
 Er zijn geen geheime sleutels nodig in Netlify. De frontend bevat uitsluitend de openbare Supabase publishable key; databasebeleid schermt echte prospecten en antwoorden af voor het aangemelde eigenaaraccount. Gmail- en workergeheimen blijven in Supabase.
 
