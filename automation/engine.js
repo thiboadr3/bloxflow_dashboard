@@ -37,18 +37,17 @@ export class Engine {
    else {await this.result(this.db.from('outreach_attempts').update({state:'uncertain',error_code:'delivery_not_confirmed'}).eq('id',a.id).in('state',['dispatching','uncertain']));const rows=await this.result(this.db.from('outreach_attempts').select('job_id').eq('id',a.id));await this.result(this.db.from('outreach_jobs').update({status:'uncertain',stop_reason:'delivery_not_confirmed'}).eq('id',rows[0].job_id).in('status',['reserved','queued']));}
   }
  }
- async preflight(job){let blocked=false;const process=async messages=>{for(const m of messages||[])if(await this.ingest(m,job.id))blocked=true;};
-  // Read the entire thread immediately before follow-up, including messages from other senders.
-  if(job.thread_id){const thread=await this.gmail.thread(job.thread_id);await process(thread.messages);}
-  // Exact address across all time, not only since the current enrollment. Never resend to an older respondent.
-  const queries=['-in:sent -in:drafts {from:'+job.recipient+' to:'+job.recipient+'}'];
-  const domain=job.identity_keys.find(k=>k.startsWith('domain:'))?.slice(7);const safeCompany=job.company_name.replace(/["\\{}()\r\n]/g,' ').trim();
-  if(domain)queries.push('-in:sent -in:drafts "'+domain+'"');
-  if(safeCompany.length>=4)queries.push('-in:sent -in:drafts "'+safeCompany+'"');
-  for(const query of queries){let cursor;do{this.budget();const page=await this.gmail.list(query,cursor,25);for(const m of page.messages||[])await process([await this.gmail.message(m.id)]);cursor=page.nextPageToken;}while(cursor);}
+ async preflight(job){let blocked=false;
+  const process=async(message,knownThread=false)=>{const parsed=inbound(message);if(!parsed)return;const sender=parsed.from_address,domain=job.identity_keys.find(k=>k.startsWith('domain:'))?.slice(7);const related=knownThread||sender===job.recipient||domain&&sender.endsWith('@'+domain);if(related){await this.rpc('bloxflow_ingest_reply',{p_message:parsed,p_job:job.id});blocked=true;}};
+  if(job.thread_id){const thread=await this.gmail.thread(job.thread_id);for(const m of thread.messages||[])await process(m,true);}
+  // Search exact counterpart, then require sender/domain evidence before assigning any result.
+  const queries=['-in:sent -in:drafts from:'+job.recipient];
+  const domain=job.identity_keys.find(k=>k.startsWith('domain:'))?.slice(7);
+  if(domain)queries.push('-in:sent -in:drafts from:(@'+domain+')');
+  for(const query of queries){let cursor;do{this.budget();const page=await this.gmail.list(query,cursor,25);for(const m of page.messages||[])await process(await this.gmail.message(m.id));cursor=page.nextPageToken;}while(cursor);}
   return !blocked;
  }
- async verifyPending(){const rows=await this.result(this.db.from('prospects').select('id,website_url,email,updated_at').eq('review_status','approved').eq('previously_contacted',false).eq('email_verified',false).is('archived_at',null).eq('send_blocker','campaign_not_approved').order('approved_at').limit(1));
+ async verifyPending(){const runtime=await this.runtime();if(!runtime.campaign_started_at)return;const rows=await this.result(this.db.from('prospects').select('id,website_url,email,updated_at').eq('review_status','approved').gte('approved_at',runtime.campaign_started_at).eq('previously_contacted',false).eq('email_verified',false).is('archived_at',null).eq('send_blocker','campaign_not_approved').order('approved_at').limit(1));
  for(const p of rows){this.budget();const evidence=await verifyAddress(p.website_url,p.email);await this.rpc('bloxflow_email_evidence',{p_id:p.id,p_expected:p.updated_at,p_verified:evidence.verified,p_url:evidence.url||null,p_status:evidence.status});}}
  async run(){this.token=await this.rpc('bloxflow_worker_lock');if(!this.token)return {status:'busy'};
   try{

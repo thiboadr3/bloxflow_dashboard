@@ -5,3 +5,5 @@
 .inboxHeading{display:flex;justify-content:space-between;align-items:center;gap:12px}.replyRow{border-bottom:1px solid var(--line);padding:20px 0}.replyRow h2{margin:0}.replyRow p{margin:6px 0}.replyRow pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);margin:16px 0}.replyRow a{display:inline-block;padding:8px 0}#olderInbox{margin-top:20px}@media(max-width:550px){header{gap:6px;padding:8px}nav button{font-size:12px;padding:8px 6px}.brand{font-size:18px}}
 
 #passwordSetup{max-width:520px;padding-top:55px}#passwordForm button{margin:14px 0}#passwordStatus{overflow-wrap:anywhere}
+
+.sectorRow{grid-template-columns:2fr repeat(6,1fr)}.sectorNote{grid-column:1/-1;margin:0;font-size:12px}@media(max-width:700px){.sectorRow{grid-template-columns:repeat(3,1fr)}.sectorRow button{grid-column:1/-1}}
