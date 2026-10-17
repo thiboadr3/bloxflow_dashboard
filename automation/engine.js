@@ -1,5 +1,4 @@
 import {OWNER,mime,headers,inbound} from './mail.js';
-import {verifyAddress} from './email-check.js';
 export class Gmail {
  constructor(token,fetcher=fetch){this.token=token;this.fetcher=fetcher;}
  async request(path,options={}){const response=await this.fetcher('https://gmail.googleapis.com/gmail/v1/users/me/'+path,{...options,headers:{Authorization:'Bearer '+this.token,'Content-Type':'application/json'},signal:AbortSignal.timeout(10000)});if(!response.ok){const error=Error('gmail_'+response.status);error.status=response.status;throw error;}return response.json();}
@@ -47,12 +46,10 @@ export class Engine {
   for(const query of queries){let cursor;do{this.budget();const page=await this.gmail.list(query,cursor,25);for(const m of page.messages||[])await process(await this.gmail.message(m.id));cursor=page.nextPageToken;}while(cursor);}
   return !blocked;
  }
- async verifyPending(){const runtime=await this.runtime();if(!runtime.campaign_started_at)return;const rows=await this.result(this.db.from('prospects').select('id,website_url,email,updated_at').eq('review_status','approved').gte('approved_at',runtime.campaign_started_at).eq('previously_contacted',false).eq('email_verified',false).is('archived_at',null).eq('send_blocker','campaign_not_approved').order('approved_at').limit(1));
- for(const p of rows){this.budget();const evidence=await verifyAddress(p.website_url,p.email);await this.rpc('bloxflow_email_evidence',{p_id:p.id,p_expected:p.updated_at,p_verified:evidence.verified,p_url:evidence.url||null,p_status:evidence.status});}}
  async run(){this.token=await this.rpc('bloxflow_worker_lock');if(!this.token)return {status:'busy'};
   try{
    const runtime=await this.runtime();const complete=await this.sync(runtime);if(!complete)return {status:'syncing'};
-   await this.reconcile();await this.verifyPending();this.budget();const candidate=await this.rpc('bloxflow_reserve',{p_token:this.token});if(!candidate){await this.updateRuntime({last_error:null});return {status:'checked'};}
+   await this.reconcile();this.budget();const candidate=await this.rpc('bloxflow_reserve',{p_token:this.token});if(!candidate){await this.updateRuntime({last_error:null});return {status:'checked'};}
    const {job,attempt}=candidate;
    try{if(!await this.preflight(job)){await this.result(this.db.from('outreach_attempts').update({state:'cancelled',error_code:'reply_found'}).eq('id',attempt.id).eq('state','reserved'));return {status:'reply_stopped'};}
     this.budget();const raw=mime({to:job.recipient,step:attempt.step,messageId:attempt.message_id,parentId:job.parent_message_id});

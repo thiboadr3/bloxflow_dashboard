@@ -1,0 +1,47 @@
+Lokale controlescan — 17 oktober 2026
+
+Scope: frontendselectie, laden van websites, beoordeling, filters, browseropslag,
+archivering, navigatie tijdens opslaan, broncode van Gmail-worker en SQL-gates.
+Geen echte beoordelingen gewijzigd. Geen e-mails verzonden. Niet gepubliceerd.
+
+Lokaal hersteld:
+- Oud iframe vervangen per bedrijf; vertraagde callbacks krijgen geen toegang tot nieuw bedrijf.
+- Beoordelingen geblokkeerd tijdens laden en gekoppeld aan iframe-prospect-ID.
+- Navigatie geblokkeerd tijdens opslaan, inclusief doorklikken via sectoroverzicht.
+- Actieve prospectlijst filtert archived_at expliciet op null.
+- Ontbrekende/ongeldige URL: afwijzen/later mogelijk, goedkeuren geblokkeerd.
+- Toegang tot localStorage zelf kan een SecurityError geven; startup valt nu veilig terug.
+- Bevestiging vorige keuze onderscheiden van identiteit huidige bedrijf.
+
+Gecontroleerde bestaande beveiligingen in broncode/tests:
+- Optimistische versiecontrole bij review en sectorwijziging.
+- Geen verzending bij onvolledige inboxsync of ingetrokken toestemming.
+- Verse antwoordcontrole voor verzending en geen blinde retry na onzeker verzendresultaat.
+- Daglimieten/archivering/historiek in bestaande SQL-gates.
+
+Beperkingen/open punten:
+- Een iframe-loadevent bewijst niet dat de externe pagina goed werkt. Cross-origin
+  foutpagina's, redirects en frameblokkering zijn niet betrouwbaar uitleesbaar.
+  Bedrijfsnaam/domein blijven zichtbaar; apart openen via menu blijft nodig.
+- Deze scan is geen nieuwe live Supabase-audit of echte Gmail-transporttest.
+- Eerdere beoordelingen kunnen niet aan achteraf zichtbare iframe-inhoud worden gekoppeld.
+- Lokale wijzigingen moeten nog visueel worden nagekeken en gepubliceerd.
+
+Mobiele verfijning: laadscherm met directe aparte websiteknop, beter contrast
+voor drie bestaande ronde knoppen, compact scrollbaar menu met bedrijfsacties
+voor de filters, 16px formuliervelden en grotere inboxtekst. Chromium-layout
+gecontroleerd op 320x568, 390x844, 844x390 en 1280x800; menu binnen viewport.
+43 tests slagen. Geen fysieke iPhone/Android of mobiele toetsenbordtest uitgevoerd.
+
+Laadsnelheid: maximaal één volgende website vooraf geladen na huidige load.
+Iframe wordt in dezelfde DOM-positie behouden bij promotie, geen tweede src-assign.
+Filters/navigatie ruimen voorbereide pagina op; databesparing en 2G slaan vooraf laden over.
+46 tests slagen. Geïsoleerde Chromium-test met drie nepbedrijven bevestigt
+exact één request voor tweede website en hetzelfde iframe na goedkeuren.
+Geen vaste snelheidswinst gemeten voor echte externe websites.
+
+Progressieve weergave: zichtbaar iframe vanaf navigatie; laadmelding bedekt niet
+meer de hele pagina. Voorladen start na 800ms zonder op volledig load te wachten.
+47 tests slagen. Browserproef met bewust tegengehouden afbeelding bevestigt
+zichtbare paginakop vóór load; beoordeling blijft geblokkeerd tot load.
+Geen gegarandeerde versnelling van externe servers of blokkades.

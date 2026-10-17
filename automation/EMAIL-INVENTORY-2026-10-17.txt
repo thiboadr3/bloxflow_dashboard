@@ -1,0 +1,46 @@
+E-mailvoorraad — 17 oktober 2026
+
+Opdracht: bestaande scrape-adressen gebruiken, ontbrekende/probleemadressen vooraf
+herstellen, geen websitezoekactie na goedkeuring.
+Live preflight: Nicheverdeling!A1:G40 gelezen. Geen nieuwe bedrijven toegevoegd.
+
+Dataherstel in Supabase: 39 probleemgevallen onderzocht; 32 adressen met openbare
+bron bevestigd/aangevuld/gecorrigeerd; 7 herstelbaar gearchiveerd. Vorige records
+staan in email_inventory_audit (RLS, geen toegang anon/authenticated).
+Contacthistoriek en outreach_blocks bewaren uitsluitingen bij een nieuwe scrape.
+Geen e-mails verzonden tijdens de controle.
+
+Belangrijk onderscheid:
+- verified = openbare bron gecontroleerd tijdens deze controle of bestaande controle.
+- source_provided = exact hetzelfde adres als in de oorspronkelijke Sheet-import.
+  Dit is GEEN claim dat alle geïmporteerde adressen opnieuw publiek zijn geverifieerd,
+  noch dat aflevering gegarandeerd is.
+
+Lokale mailworker: automatische websitecontrole uit dispatch verwijderd; ook niet
+meer in gebouwde Edge Function. Antwoordcontrole, verzendlimieten en deduplicatie
+blijven behouden. Nieuwe test verbiedt het lezen/crawlen van prospects bij dispatch.
+48 Node-tests slagen. Nog niet via GitHub/Netlify gepubliceerd.
+
+Live eindcontrole:
+- 9.708 actieve bedrijven; nul zonder e-mailherkomst.
+- Alle overige reeds aangeleverde adressen komen exact overeen met de importbron.
+- 7 probleemgevallen zijn gearchiveerd; daarnaast archiveerde de bestaande
+  contacthistoriek-bescherming 131 eerder-gecontacteerde bronrecords bij de update.
+  Niets hiervan is permanent verwijderd of opnieuw vrijgegeven voor outreach.
+- Migratie 016 live toegepast na teruggedraaide proef inclusief dashboardfunctie.
+- Goedkeuring met bronadres slaat send_blocker=none op; hierdoor vindt de bestaande
+  live worker geen kandidaten meer voor de oude websitecontrole.
+- Nieuw importeren vereist een geldig e-mailveld met bronadres of bronbewijs.
+- Bij wijziging van een gecontroleerd adres vervalt oud bewijs tenzij nieuw bewijs
+  en nieuw controletijdstip worden meegeleverd.
+- Frontend en opgeschoonde workerbroncode blijven lokaal tot publicatieakkoord.
+
+Definitieve controle:
+- 54 niet-testbedrijven in mailwachtrij; dienst enabled=true, last_error=null.
+- Bestaande live worker: nul kandidaten voor websitecontrole na goedkeuring.
+- Post-activatie ketentest: PASS (query 7b25e2d9-05e8-433b-bf05-e6569b9bedba).
+  Eerste test wees terecht een prospect zonder website af (missing_website);
+  de definitieve test gebruikt een prospect met website en bronadres.
+- De 7 e-mailprobleemgevallen staan door de bestaande history-trigger met
+  archive_reason=already_contacted in historiek; hun specifieke reden en snapshot
+  blijven als archive_no_public_email in email_inventory_audit bewaard.

@@ -29,3 +29,42 @@ body.reviewing{overflow:hidden}body.reviewing>header{display:none}body.reviewing
 
 /* Three translucent circles; no solid panel over the prospect website. */
 body.reviewing .decisions{width:168px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;pointer-events:none}body.reviewing #swipe{height:16px;min-height:16px;padding:0;font-size:0;pointer-events:auto}body.reviewing .decisions .actions{gap:12px;align-items:center;pointer-events:none}body.reviewing .decisions .actions>button,body.reviewing .moreActions #more{flex:0 0 48px;width:48px;height:48px;min-height:48px;padding:12px;border:1px solid rgb(255 255 255 / 65%);border-radius:50%;background:rgb(255 255 255 / 42%);box-shadow:0 1px 4px #0002;pointer-events:auto}body.reviewing .moreActions{flex:0 0 48px;pointer-events:none}body.reviewing #reject{color:#8c342c}body.reviewing #approve{color:#183e29}body.reviewing #more{color:#242b25}body.reviewing .decisions svg{display:block;flex-shrink:0}body.reviewing .decisions button:hover,body.reviewing .decisions button:focus-visible{background:rgb(255 255 255 / 82%)}body.reviewing .decisions button:active{background:rgb(255 255 255 / 95%)}
+
+body.reviewing #previewIdentity{position:fixed;top:calc(8px + env(safe-area-inset-top));left:12px;max-width:calc(100% - 24px);padding:4px 8px;background:#fffffff0;color:var(--ink);font-size:12px;z-index:20;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}body.reviewing #previewIdentity:empty{display:none}
+
+/* Mobile refinements: readable controls, a compact menu and clear loading recovery. */
+#previewLoading{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:72px 24px 112px;background:#fafaf9;text-align:center;overflow:auto}
+#previewLoading p{max-width:34ch;margin:0;color:var(--ink)}#previewLoading .note{font-size:14px;color:var(--muted)}#previewLoading button{min-height:48px;font-size:16px}
+body.reviewing .decisions .actions>button,body.reviewing .moreActions #more{background:rgb(255 255 255 / 78%);border-color:rgb(36 43 37 / 26%)}
+body.reviewing .decisions button:disabled{opacity:1;background:rgb(245 245 243 / 90%);color:#858b85!important;border-color:rgb(36 43 37 / 14%)}
+button,a,select,input{ -webkit-tap-highlight-color:rgb(45 75 55 / 16%)}
+@media(max-width:700px),(max-height:500px) and (orientation:landscape){
+ input:not([type=checkbox]),textarea,select{font-size:16px}
+ #inbox{font-size:16px}#inbox .note{font-size:14px}#inbox .replyRow a{min-height:44px;display:inline-flex;align-items:center}#inbox .replyRow pre{line-height:1.6}
+ #reviewNav{padding:16px;max-height:calc(100dvh - 24px - env(safe-area-inset-top));scroll-padding:16px;overscroll-behavior:contain}
+ #reviewNav h3{margin:16px 0 6px}#navCompany{margin:8px 0 12px;font-size:14px;overflow-wrap:anywhere}
+ #reviewNav .filters{display:grid;grid-template-columns:80px minmax(0,1fr);gap:8px;padding:6px 0;border:0}
+ #reviewNav .filters label{font-size:14px}#reviewNav .filters select{width:100%;min-width:0;min-height:44px}
+ #reviewNav #remaining{grid-column:1/-1;font-size:13px}#reviewNav .filters .check{grid-column:1/-1;min-height:44px;align-items:center}
+ #reviewNav .reviewMenuActions button{min-height:48px;font-size:14px}#navLogout{margin-top:12px}
+ #reviewNav nav button{font-size:14px;min-height:44px}#correctSector{font-size:16px}
+ dialog{max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+}
+@media(max-height:500px) and (orientation:landscape){
+ #previewLoading{padding:42px 24px 82px;gap:8px}#previewLoading .note{display:none}
+ body.reviewing .decisions{bottom:calc(6px + env(safe-area-inset-bottom))}
+ #reviewNav{margin:auto;max-height:calc(100dvh - 16px)}
+}
+
+/* Show the external page progressively instead of covering it until window.load. */
+body.reviewing #previewLoading{inset:auto 12px calc(92px + env(safe-area-inset-bottom));max-width:440px;margin:auto;padding:10px 12px;gap:8px;background:rgb(250 250 249 / 96%);border:1px solid var(--line);border-radius:6px;max-height:40dvh;justify-content:flex-start;pointer-events:auto}
+body.reviewing #previewLoading p{font-size:13px;max-width:none}body.reviewing #previewLoading .note{display:none}body.reviewing #previewLoading button{font-size:14px;min-height:44px;padding:6px 12px}
+
+/* Keep the website action in reach, independently of the menu scroll position. */
+#reviewNav{padding:0;overflow:hidden}#reviewNav[open]{display:flex;flex-direction:column}
+#reviewNav .reviewNavContent{padding:16px;overflow:auto;min-height:0;overscroll-behavior:contain}
+#reviewNav .reviewNavFooter{flex-shrink:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#fff}
+#reviewNav .reviewNavFooter button{width:100%;min-height:48px;font-size:16px}
+
+/* Direct website access beside the review controls. */
+body.reviewing .decisions{width:228px}body.reviewing #openWebsite{color:var(--ink)}

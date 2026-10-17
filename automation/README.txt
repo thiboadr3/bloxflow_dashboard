@@ -36,3 +36,12 @@ node automation/build.mjs (rebuild standalone Edge entry after source edits)
 Scheduling in Supabase means no Windows PC/Codex needs to stay open once tested and activated. Cloud availability still matters; downtime must not cause catchup bursts.
 
 AUDIT UPDATE 17 October 2026: migrations 014/015 and updated worker deployed. Full database pipeline, real UI approval/website verification/weekend queue and real own-account incoming message/opt-out stop verified. System test record archived and test traffic excluded from production counts. 27 Node tests pass. See AUDIT-2026-10-17.txt for exact evidence and limits. Supersedes earlier counter/readiness notes.
+
+E-mailvoorraad (17 oktober 2026)
+Zoek en registreer één exact openbaar zakelijk adres tijdens sourcing. Voeg een
+prospect pas daarna actief toe. Lever source_record_id met hetzelfde Email-veld,
+of verse email_verified/email_evidence_url/email_checked_at met openbare bron mee.
+source_provided betekent afkomstig uit de aangeleverde bron, niet opnieuw gecrawld.
+De mailworker zoekt na goedkeuring geen e-mailadressen. De database bewaakt formaat,
+bronherkomst, goedkeuring, contacthistoriek en uitsluitingen. Geen gevonden adres:
+herstelbaar archiveren met identity keys; nooit de contacthistoriek weggooien.
