@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test automation/*.test.mjs tests/*.test.mjs",
     "build:worker": "node automation/build.mjs",
-    "check": "node --check dist/werkruimte.js"
+    "check": "node --check dist/werkruimte.js",
+    "dev": "python3 scripts/dev_server.py"
   },
   "engines": {
     "node": ">=20"
