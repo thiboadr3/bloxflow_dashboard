@@ -5,6 +5,7 @@
   from = "/"
   to = "/werkruimte"
   status = 302
+  force = true
 
 [[redirects]]
   from = "/werkruimte"
