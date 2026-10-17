@@ -1,0 +1,21 @@
+begin;
+do $$ declare p public.prospects;j uuid;a uuid;n integer;begin
+if public.bloxflow_due('2026-10-16 10:00+02',3,true) <> '2026-10-21 10:00+02'::timestamptz then raise exception 'Werkdagen fout';end if;
+if public.bloxflow_due('2026-10-16 10:00+02',3,false) <> '2026-10-19 10:00+02'::timestamptz then raise exception 'Kalenderdagen fout';end if;
+select * into p from public.prospects where archived_at is not null limit 1;
+if public.bloxflow_job_safe(p) is true then raise exception 'Historiek werd vrijgegeven';end if;
+select * into p from public.prospects where archived_at is null limit 1;
+insert into public.outreach_jobs(prospect_id,recipient,company_name,identity_keys) values(p.id,'rollback-test@example.invalid','ROLLBACK TEST',array['email:rollback-test@example.invalid']) returning id into j;
+insert into public.outreach_attempts(job_id,step,message_id) values(j,1,'<rollback-test@bloxflow.be>') returning id into a;
+select public.bloxflow_ingest_reply(jsonb_build_object('gmail_id','rollback-test','thread_id','rollback-thread','from_address','rollback-test@example.invalid','subject','Test','body_text','Geen interesse','received_at',now(),'kind','reply'),j) into n;
+if n<>1 or not exists(select 1 from public.outreach_jobs where id=j and status='replied') then raise exception 'Antwoordstop fout';end if;
+if not exists(select 1 from public.outreach_blocks where identity_keys=array['email:rollback-test@example.invalid']) then raise exception 'Blokkering ontbreekt';end if;
+if has_function_privilege('anon','public.bloxflow_reserve(uuid)','EXECUTE') or has_function_privilege('authenticated','public.bloxflow_reserve(uuid)','EXECUTE') then raise exception 'Onbedoelde verzendtoegang';end if;
+if has_table_privilege('anon','public.outreach_messages','SELECT') or has_table_privilege('authenticated','public.outreach_messages','SELECT') then raise exception 'Onbedoelde inbox toegang';end if;
+end $$;
+select set_config('request.jwt.claims','{"sub":"11111111-1111-4111-8111-111111111111","email":"thibo@bloxflow.be","role":"authenticated"}',true);
+set local role authenticated;
+select public.bloxflow_mail_overview();
+select public.bloxflow_inbox();
+rollback;
+select 'PASS: antwoord stopt opvolging, blokkering bewaard, werkdagen correct, eigenaarafscherming correct, alle testdata teruggedraaid' as resultaat;

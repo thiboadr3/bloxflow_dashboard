@@ -1,0 +1,3 @@
+create or replace function public.bloxflow_subsectors(p_sector uuid default null,p_status text default 'needs_review') returns jsonb language plpgsql security definer set search_path='' as $$ begin if auth.uid() is null or coalesce(auth.jwt()->>'email','')<>'thibo@bloxflow.be' then raise exception 'Geen toegang' using errcode='42501';end if;return(select coalesce(jsonb_agg(x.subniche order by x.subniche),'[]'::jsonb) from(select distinct subniche from public.prospects where (p_sector is null or sector_id=p_sector) and review_status=p_status and nullif(trim(subniche),'') is not null)x);end $$;
+revoke all on function public.bloxflow_subsectors(uuid,text) from public,anon;
+grant execute on function public.bloxflow_subsectors(uuid,text) to authenticated;

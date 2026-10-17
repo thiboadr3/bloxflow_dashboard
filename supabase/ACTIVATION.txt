@@ -1,0 +1,32 @@
+Owner review workspace
+
+Public demo: index.html and dashboard.html, device-local/fictitious data.
+Real workspace: werkruimte.html, authenticated Supabase client, no service-role key.
+Allowed owner: thibo@bloxflow.be. Use email magic link, not ChatGPT login.
+
+Owner database access explicitly confirmed by Thibo. Activated on 2026-10-17 after explicit user approval: 004_owner_review.sql. It gives read access to sectors/prospects for the owner email only, and narrow authenticated RPCs for review and summary. It does not grant direct update/delete to the browser and cannot enable sending. Review changes lock the prospect row and check updated_at to reject stale writes. Reviews are logged; queued/active enrollment is stopped upon a review change.
+
+Before running migration, inspect pg_policies and existing functions to avoid conflicting with other work. Site URL configured as https://bloxflow-prospect-swipe.copperelk64.chatgpt.site/werkruimte. First owner account is created on user-requested magic-link login. No invitation or login email has been sent by the agent. Public visitors must fail database access. A real owner session is required for end-to-end approval verification.
+
+Source-preserved contact history stays blocked, even when the website is approved. Future scheduler must separately check all suppression and identity history.
+
+Verified 2026-10-17:
+- Migration executed successfully via Supabase SQL Editor.
+- Owner role simulation reads all 10 sectors; summary RPC returns 10 sectors.
+- Direct authenticated UPDATE on prospects is denied.
+- Review write succeeds, stale write is rejected, missing quality checks are rejected, approved review leaves automation false.
+- Other authenticated email sees 0 prospects and cannot execute summary successfully.
+- All test changes rolled back; no real prospect review changed by tests.
+- Anonymous HTTP requests to prospects and summary fail with HTTP 401 / Postgres 42501.
+- Subsector list RPC activated, avoiding downloading entire prospect tables for a filter.
+- Real email-link sign-in still requires the owner to request and open a link. No owner session or inbox login link was read or copied by the agent.
+
+2026-10-17: migration 008_hvac_contact_archive.sql activated. Live Sheet/source checksum matched. 958 historical HVAC source entries retained; 805 operational HVAC rows soft-archived; 2732 active HVAC records (2244 needs_review). Existing 10651 prospects and 12054 source rows preserved. Archive matches are hidden by owner SELECT RLS, summary/subsectors exclude them, and an INSERT/UPDATE trigger prevents a new imported copy from becoming sendable. Trigger tested with a rolled-back duplicate insertion requesting automation=true. Direct anonymous/authenticated archive-table access remains revoked. No mails sent, no new send approvals, no other-sector cleanup. See private mailbox-audit/hvac-reconciliation-2026-10-17/resultaat.md for evidence.
+
+HVAC cloud sender implementation, 2026-10-17: 009 installed (query 28078233-08eb-4a0d-ba5f-6e0781072cfc); rollback integration tests passed (query 2f68c57c-81fb-4cd7-9976-584b55a210aa); hvac-worker deployed; 010 scheduler configured (query fe229470-6b03-4e27-bff9-5f7b76b15619). Still NOT active: enabled=false, worker_verified=false, sending paused. Legacy JWT gateway still on, own worker key confirmation pending. No production or self-test email sent. Frontend inbox changes local only because Sites project lookup currently returns NOT_FOUND. Current implementation status: automation/README.txt.
+
+After explicit owner approval: hvac-worker legacy JWT verification switched OFF in dashboard; custom Vault-held secret authentication remains mandatory. Saved state confirmed. Missing-key and wrong-key probes both returned 401 Unauthorized. Signed invocation b056984e-a2fc-45e6-9796-468518cb9f9a initiated. Health verified via e701805e-961b-49d6-a3e1-99392f68710c: enabled=false, worker_verified=false, last_run_at=2026-10-17 09:53:10.636019+00, last_sync_at=2026-10-17 09:53:14.039+00, last_error=NULL, history ready=true, bootstrap pending=false, sent=0. Gmail synchronization works unattended. No production sending activated. User requested frontend work remain local for now.
+
+2026-10-17 10:00 UTC: real owner-only self-test passed for all three templates (recipient, signature, demo link, same Gmail thread); no duplicate resend after earlier verification error. Query a7525932-9110-4b6e-8867-0eb9254b31a3. worker_verified=true recorded and followup_days=[3,3] set in query 39ce98ae-b9bb-4b85-98b4-3999d66cd90e. enabled remains false, production paused, zero prospect mails. Imported stock clearance exception is awaiting owner answer. Current status supersedes earlier pending-test notes above.
+
+2026-10-17 owner explicitly approved source-new HVAC stock release. Migration 012 executed in query d206d03e-0ed0-4163-b029-72bec6fec8f7: 2625 released; 7 extra suppression matches remain blocked. 805 historical and 100 scheduled remain blocked. Source records and reviews preserved; private clearance audit table with RLS and no anon/authenticated grants. Launch gates passed and rolled back in c1f7a38a-57f4-4d27-8380-593a579551ab. Migration 013 activated campaign in query 4889d8b1-6f9b-4f24-b53e-3606c40a02e9: enabled=true, verified=true, campaign_started_at=2026-10-17 10:53:31.692679+00, followups=[3,3] working days, weekday 08–18, 200 per step / 600 total. Fresh approvals only; older approvals do not enroll. Frontend remains local-only per user request.
