@@ -84,6 +84,5 @@ body.reviewing #swipeFeedback{top:calc(64px + env(safe-area-inset-top));font-siz
 #swipeFeedback[data-direction=yes]{color:#15803d;transform:translateX(-50%) rotate(-8deg)}
 #swipeFeedback[data-direction=no]{color:#b91c1c;transform:translateX(-50%) rotate(8deg)}
 #swipeFeedback[data-direction=up],#swipeFeedback[data-direction=down]{color:var(--ink);transform:translateX(-50%)}
-.swipeGuide{position:absolute;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:grid;gap:2px;padding:6px 12px;border-radius:6px;background:#fffffff2;color:var(--ink);font-size:11px;line-height:16px;white-space:nowrap;pointer-events:none}
 body.reviewing #reject{color:#b91c1c}body.reviewing #approve{color:#15803d}
 @media(prefers-reduced-motion:reduce){body.reviewing #websiteCard{transition:none;transform:none!important}#swipeFeedback[data-direction]{transform:translateX(-50%)}}
