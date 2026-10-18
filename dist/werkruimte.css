@@ -68,3 +68,22 @@ body.reviewing #previewLoading p{font-size:13px;max-width:none}body.reviewing #p
 
 /* Direct website access beside the review controls. */
 body.reviewing .decisions{width:228px}body.reviewing #openWebsite{color:var(--ink)}
+
+/* Full-card touch gestures: the external website opens separately for interaction. */
+:root{--swipe-return:180ms;--swipe-ease:cubic-bezier(.22,1,.36,1)}
+body.reviewing #swipe{position:absolute;inset:0;z-index:3;width:100%;height:100%;min-height:0;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overscroll-behavior:contain}
+body.reviewing #swipe:active{cursor:grabbing}
+body.reviewing #swipe:focus-visible{outline:3px solid var(--green);outline-offset:-5px}
+body.reviewing #websiteFrame{pointer-events:none}
+body.reviewing #websiteCard{transition:transform var(--swipe-return) var(--swipe-ease);transform-origin:50% 75%;--swipe-color:45 75 55}
+body.reviewing #websiteCard[data-dragging=true]{transition:none;will-change:transform}
+#websiteCard[data-direction=yes]{--swipe-color:21 128 61}
+#websiteCard[data-direction=no]{--swipe-color:185 28 28}
+#websiteCard::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:rgb(var(--swipe-color,45 75 55) / var(--swipe-tint,0));border-radius:inherit}
+body.reviewing #swipeFeedback{top:calc(64px + env(safe-area-inset-top));font-size:clamp(22px,5vw,36px);line-height:1.15;border:2px solid currentColor;padding:12px 18px;white-space:nowrap;z-index:2;background:#fff;box-shadow:0 2px 8px #0002}
+#swipeFeedback[data-direction=yes]{color:#15803d;transform:translateX(-50%) rotate(-8deg)}
+#swipeFeedback[data-direction=no]{color:#b91c1c;transform:translateX(-50%) rotate(8deg)}
+#swipeFeedback[data-direction=up],#swipeFeedback[data-direction=down]{color:var(--ink);transform:translateX(-50%)}
+.swipeGuide{position:absolute;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:grid;gap:2px;padding:6px 12px;border-radius:6px;background:#fffffff2;color:var(--ink);font-size:11px;line-height:16px;white-space:nowrap;pointer-events:none}
+body.reviewing #reject{color:#b91c1c}body.reviewing #approve{color:#15803d}
+@media(prefers-reduced-motion:reduce){body.reviewing #websiteCard{transition:none;transform:none!important}#swipeFeedback[data-direction]{transform:translateX(-50%)}}

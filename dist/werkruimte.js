@@ -52,13 +52,63 @@ db.auth.onAuthStateChange(event=>{if(event==='PASSWORD_RECOVERY')showPasswordSet
 $('loginForm').onsubmit=async e=>{e.preventDefault();if($('email').value.trim().toLowerCase()!==OWNER){setStatus('Gebruik het toegelaten zakelijke account.');return}const button=e.submitter;button.disabled=true;setStatus('Aanmelden…');try{const {error}=await db.auth.signInWithPassword({email:OWNER,password:$('password').value});if(error)throw error;$('password').value='';location.replace('/werkruimte')}catch{setStatus('Aanmelden mislukt. Controleer je gegevens of kies ‘Wachtwoord instellen of vergeten’.')}finally{button.disabled=false}};
 $('resetPassword').onclick=async()=>{const button=$('resetPassword');button.disabled=true;setStatus('Beveiligde link aanvragen…');try{const {error}=await db.auth.resetPasswordForEmail(OWNER,{redirectTo:location.origin+'/werkruimte'});if(error)throw error;setStatus('Link aangevraagd. Open de e-mail op dit toestel en in deze browser om je wachtwoord in te stellen.')}catch{setStatus('Link aanvragen mislukt. Wacht even en probeer opnieuw.')}finally{button.disabled=false}};
 $('passwordForm').onsubmit=async e=>{e.preventDefault();const password=$('newPassword').value,confirmation=$('confirmPassword').value;if(password.length<12||password!==confirmation){$('passwordStatus').textContent='Gebruik minimaal 12 tekens en vul tweemaal hetzelfde wachtwoord in.';return}const button=e.submitter;button.disabled=true;try{const {data,error:identityError}=await db.auth.getUser();if(identityError||data.user?.email?.toLowerCase()!==OWNER)throw Error('identity');const {error}=await db.auth.updateUser({password});if(error)throw error;$('passwordForm').reset();$('passwordStatus').textContent='Wachtwoord opgeslagen. Je werkruimte wordt geopend.';location.replace('/werkruimte')}catch{$('passwordStatus').textContent='Opslaan mislukt. Gebruik een ander sterk wachtwoord of vraag een nieuwe link aan.'}finally{button.disabled=false}};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};document.querySelectorAll('[data-view]').forEach(b=>b.onclick=async()=>{if(busy)return;showMode(b.dataset.view);if(b.dataset.view==='dashboard'&&user){try{await Promise.all([loadSummary(),loadMailState()])}catch{setStatus('Overzicht verversen mislukt.')}}if(b.dataset.view==='inbox'&&user)await loadInbox()});$('sector').onchange=async()=>{try{invalidatePreview();$('subsector').value='all';rememberReviewFilters();await loadSubsectors();await loadItems()}catch{setStatus('Sectoren ophalen mislukt. Vernieuw de pagina.')}};$('subsector').onchange=()=>{rememberReviewFilters();loadItems()};$('withWebsite').onchange=()=>{rememberReviewFilters();loadItems()};$('queue').onchange=$('sector').onchange;$('approve').onclick=()=>openDecision('approved');$('reject').onclick=()=>openDecision('rejected');$('later').onclick=()=>openDecision('later');$('showContext').onclick=()=>{$('context').hidden=false;$('contextDialog').showModal()};$('closeContext').onclick=()=>$('contextDialog').close();$('menuContext').onclick=()=>{closeMenu();$('showContext').click()};$('menuWebsite').onclick=()=>{closeMenu();$('toggleFrame').click()};$('openWebsite').onclick=()=>$('toggleFrame').click();$('openLoadingWebsite').onclick=()=>$('toggleFrame').click();$('toggleFrame').onclick=()=>{if(busy)return;const url=safeUrl(current?.website_url);if(url){window.open(url,'_blank','noopener,noreferrer');previewReady=true;$('previewLoadingText').textContent='Website apart geopend. Keer terug om '+current.company_name+' te beoordelen.';syncDecisionButtons()}};$('swipe').addEventListener('pointerdown',e=>{if(busy||!current)return;swipeStart={x:e.clientX,y:e.clientY,id:current.id};$('swipe').setPointerCapture(e.pointerId)});
-$('swipe').addEventListener('pointermove',e=>{if(!swipeStart||busy)return;const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;if(Math.abs(dx)>Math.abs(dy)*1.4){const offset=Math.max(-90,Math.min(90,dx*.3));$('websiteCard').style.transform=`translateX(${offset}px) rotate(${offset/70}deg)`;$('swipeFeedback').textContent=dx>0?'Goedkeuren':'Afwijzen';$('swipeFeedback').dataset.direction=dx>0?'yes':'no';$('swipeFeedback').style.opacity=String(Math.min(1,Math.abs(dx)/100));}});
-$('swipe').addEventListener('pointerup',e=>{const start=swipeStart;resetSwipe();if(start&&!busy&&start.id===current?.id){const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.4)openDecision(dx>0?'approved':'rejected')}});
+$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};document.querySelectorAll('[data-view]').forEach(b=>b.onclick=async()=>{if(busy)return;showMode(b.dataset.view);if(b.dataset.view==='dashboard'&&user){try{await Promise.all([loadSummary(),loadMailState()])}catch{setStatus('Overzicht verversen mislukt.')}}if(b.dataset.view==='inbox'&&user)await loadInbox()});$('sector').onchange=async()=>{try{invalidatePreview();$('subsector').value='all';rememberReviewFilters();await loadSubsectors();await loadItems()}catch{setStatus('Sectoren ophalen mislukt. Vernieuw de pagina.')}};$('subsector').onchange=()=>{rememberReviewFilters();loadItems()};$('withWebsite').onchange=()=>{rememberReviewFilters();loadItems()};$('queue').onchange=$('sector').onchange;$('approve').onclick=()=>openDecision('approved');$('reject').onclick=()=>openDecision('rejected');$('later').onclick=()=>openDecision('later');$('showContext').onclick=()=>{$('context').hidden=false;$('contextDialog').showModal()};$('closeContext').onclick=()=>$('contextDialog').close();$('menuContext').onclick=()=>{closeMenu();$('showContext').click()};$('menuWebsite').onclick=()=>{closeMenu();$('toggleFrame').click()};$('openWebsite').onclick=()=>$('toggleFrame').click();$('openLoadingWebsite').onclick=()=>$('toggleFrame').click();$('toggleFrame').onclick=()=>{if(busy)return;const url=safeUrl(current?.website_url);if(url){window.open(url,'_blank','noopener,noreferrer');previewReady=true;$('previewLoadingText').textContent='Website apart geopend. Keer terug om '+current.company_name+' te beoordelen.';syncDecisionButtons()}};// The transparent surface captures gestures above the cross-origin website iframe.
+$('swipe').addEventListener('pointerdown',e=>{
+ if(busy||!current||e.isPrimary===false||(e.button!==undefined&&e.button!==0))return;
+ swipeStart={x:e.clientX,y:e.clientY,id:current.id,pointer:e.pointerId,axis:null};
+ $('swipe').setPointerCapture(e.pointerId);$('websiteCard').dataset.dragging='true';
+});
+$('swipe').addEventListener('pointermove',e=>{
+ if(!swipeStart||busy||e.pointerId!==swipeStart.pointer)return;
+ const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;
+ if(!swipeStart.axis&&Math.max(Math.abs(dx),Math.abs(dy))>12){
+  if(Math.abs(dx)>Math.abs(dy)*1.25)swipeStart.axis='x';
+  else if(Math.abs(dy)>Math.abs(dx)*1.25)swipeStart.axis='y';
+ }
+ if(!swipeStart.axis)return;
+ const horizontal=swipeStart.axis==='x',distance=horizontal?dx:dy;
+ const direction=horizontal?(dx>0?'yes':'no'):(dy<0?'up':'down');
+ const progress=Math.min(1,Math.abs(distance)/100),card=$('websiteCard');
+ card.dataset.direction=direction;card.style.setProperty('--swipe-tint',String(progress*.2));
+ card.style.transform=horizontal?`translate3d(${dx*.85}px,${dy*.12}px,0) rotate(${dx/35}deg)`:`translate3d(0,${dy*.4}px,0) scale(${1-progress*.025})`;
+ $('swipeFeedback').textContent={yes:'Goedkeuren',no:'Afwijzen',up:'Website openen',down:'Menu openen'}[direction];
+ $('swipeFeedback').dataset.direction=direction;$('swipeFeedback').style.opacity=String(progress);
+});
+$('swipe').addEventListener('pointerup',e=>{
+ const start=swipeStart;
+ if(!start||e.pointerId!==start.pointer)return;
+ const dx=e.clientX-start.x,dy=e.clientY-start.y;
+ const horizontal=Math.abs(dx)>72&&Math.abs(dx)>Math.abs(dy)*1.25;
+ const vertical=Math.abs(dy)>72&&Math.abs(dy)>Math.abs(dx)*1.25;
+ resetSwipe();
+ if(busy||start.id!==current?.id)return;
+ if(horizontal&&start.axis!=='y')openDecision(dx>0?'approved':'rejected');
+ else if(vertical&&start.axis!=='x'){if(dy<0)$('toggleFrame').click();else $('more').click()}
+});
 $('swipe').addEventListener('pointercancel',resetSwipe);
-$('swipe').addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();openDecision(e.key==='ArrowRight'?'approved':'rejected')}});
-function resetSwipe(){swipeStart=null;$('websiteCard').style.transform='';$('swipeFeedback').style.opacity='0';}
-async function animateDecision(value){if(value==='later'||!$('websiteCard').animate||matchMedia('(prefers-reduced-motion: reduce)').matches)return;let animation,timer;try{const direction=value==='approved'?1:-1;animation=$('websiteCard').animate([{transform:'translateX(0)',opacity:1},{transform:`translateX(${direction*70}px)`,opacity:0}],{duration:150,easing:'ease-out'});await Promise.race([animation.finished,new Promise(resolve=>{timer=setTimeout(resolve,300)})]);}catch{}finally{clearTimeout(timer);animation?.cancel();}}
+$('swipe').addEventListener('lostpointercapture',()=>{if(swipeStart)resetSwipe()});
+$('swipe').addEventListener('keydown',e=>{
+ if(busy||e.repeat)return;
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+  e.preventDefault();
+  if(e.key==='ArrowUp')$('toggleFrame').click();
+  else if(e.key==='ArrowDown')$('more').click();
+  else openDecision(e.key==='ArrowRight'?'approved':'rejected');
+ }
+});
+function resetSwipe(){swipeStart=null;const card=$('websiteCard');card.style.transform='';card.style.setProperty('--swipe-tint','0');delete card.dataset.dragging;delete card.dataset.direction;$('swipeFeedback').style.opacity='0';}
+async function animateDecision(value){
+ if(value==='later')return;
+ const card=$('websiteCard'),feedback=$('swipeFeedback'),direction=value==='approved'?1:-1;
+ card.dataset.direction=direction>0?'yes':'no';card.style.setProperty('--swipe-tint','.22');
+ feedback.dataset.direction=card.dataset.direction;feedback.textContent=direction>0?'Goedgekeurd':'Afgewezen';feedback.style.opacity='1';
+ let animation,timer;
+ try{
+  if(!card.animate||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  animation=card.animate([{transform:'translateX(0) rotate(0)',opacity:1},{transform:`translateX(${direction*110}%) rotate(${direction*8}deg)`,opacity:0}],{duration:180,easing:'cubic-bezier(.22,1,.36,1)'});
+  await Promise.race([animation.finished,new Promise(resolve=>{timer=setTimeout(resolve,240)})]);
+ }catch{}finally{clearTimeout(timer);animation?.cancel();resetSwipe()}
+}
 $('reviewFilterToggle').onclick=()=>{const open=$('reviewFilters').classList.toggle('open');$('reviewFilterToggle').setAttribute('aria-expanded',String(open))};
 $('reviewBack').onclick=async()=>{if(busy)return;showMode('dashboard');try{await Promise.all([loadSummary(),loadMailState()])}catch{setStatus('Overzicht verversen mislukt.')}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('reviewFilters').classList.remove('open');$('reviewFilterToggle').setAttribute('aria-expanded','false')}});

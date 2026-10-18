@@ -33,3 +33,13 @@ Geen prospectexports, Gmail-tokens, OAuth-clientgeheimen of workergeheimen worde
 ## Aanmelden met wachtwoord
 
 De werkruimte gebruikt `signInWithPassword`. Kies bij de eerste keer ‘Wachtwoord instellen of vergeten’ om een herstelmail aan het eigenaaraccount aan te vragen. Open de link op hetzelfde toestel en in dezelfde browser (PKCE). Het gevalideerde PASSWORD_RECOVERY-event opent het instelformulier; de eigenaar stelt zelf minimaal 12 tekens in. Er is geen openbaar registratieformulier. De terugkeer-URL blijft het reeds toegestane `/werkruimte`. Wachtwoorden staan niet in broncode of browseropslag van de app.
+
+## Swipen over de websitekaart
+
+De volledige websitekaart vangt pointer- en touchgebaren op: rechts goedkeuren,
+links afwijzen, omhoog de website apart openen, omlaag het navigatiemenu openen.
+De websitepreview is daardoor niet rechtstreeks interactief; gebruik omhoog of
+‘Website openen’ om op de website te scrollen en klikken. Knoppen en pijltjestoetsen
+blijven beschikbaar. Kleine, diagonale en geannuleerde bewegingen slaan niets op.
+Groen/rood volgt de gekozen richting; de volgende kaart verschijnt pas na een
+bevestigde opslag. Verminderde beweging wordt gerespecteerd.
