@@ -6,15 +6,13 @@
 --
 -- Berichten (enkel aantallen, geen inhoud van mails of persoonsgegevens):
 --   * werkdagen ±07:45  "Vandaag klaar": nieuwe mails + opvolgmails die vandaag kunnen vertrekken
---   * werkdagen ±18:00  dagrapport: verstuurd per mail, antwoorden, opt-outs, bounces, voorraad voor morgen
 --   * meteen (binnen 15 min) als de mailworker een fout geeft of niet meer draait, en wanneer hij hersteld is
 
 create table if not exists public.outreach_notify_state(
   id boolean primary key default true check (id),
   last_error text,
   stale_alerted boolean not null default false,
-  last_morning date,
-  last_evening date
+  last_morning date
 );
 insert into public.outreach_notify_state(id) values (true) on conflict (id) do nothing;
 alter table public.outreach_notify_state enable row level security;
@@ -42,8 +40,7 @@ declare
   workday boolean := extract(isodow from (now() at time zone 'Europe/Brussels')) between 1 and 5;
   s public.outreach_notify_state;
   r public.outreach_runtime;
-  n1 int; n2 int; n3 int; s1 int; s2 int; s3 int;
-  rep int; opt int; bnc int; auto int; tomorrow int;
+  n1 int; n2 int; n3 int;
 begin
   select * into s from public.outreach_notify_state where id for update;
   select * into r from public.outreach_runtime where id;
@@ -78,23 +75,6 @@ begin
     update public.outreach_notify_state set last_morning = d where id;
   end if;
 
-  -- 3. Dagrapport (werkdagen, vanaf 18:00)
-  if workday and t::time >= time '18:00' and s.last_evening is distinct from d then
-    select count(*) filter (where step = 1), count(*) filter (where step = 2), count(*) filter (where step = 3)
-      into s1, s2, s3
-      from public.outreach_attempts where state = 'sent' and (sent_at at time zone 'Europe/Brussels')::date = d;
-    select count(*) filter (where kind = 'reply'), count(*) filter (where kind = 'opt_out'),
-           count(*) filter (where kind = 'delivery_issue'), count(*) filter (where kind = 'automatic_reply')
-      into rep, opt, bnc, auto
-      from public.outreach_messages where (received_at at time zone 'Europe/Brussels')::date = d;
-    select count(*) into tomorrow from public.outreach_jobs where status = 'queued' and not is_test and next_step = 1;
-    perform public.bloxflow_telegram('📊 Dagrapport ' || to_char(d, 'DD/MM') || E'\n'
-      || 'Verstuurd: ' || s1 || ' × mail 1, ' || s2 || ' × mail 2, ' || s3 || E' × mail 3\n'
-      || 'Binnengekomen: ' || rep || ' antwoorden, ' || opt || ' uitschrijvingen, ' || bnc || ' bounces, ' || auto || E' automatische antwoorden\n'
-      || 'Voorraad nieuwe bedrijven: ' || tomorrow
-      || case when rep > 0 then E'\n👉 Kijk je antwoorden na in het dashboard.' else '' end);
-    update public.outreach_notify_state set last_evening = d where id;
-  end if;
 end $$;
 revoke execute on function public.bloxflow_telegram_tick() from public, anon, authenticated;
 
