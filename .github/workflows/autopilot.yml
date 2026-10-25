@@ -1,0 +1,47 @@
+name: Bloxflow piloot
+
+# Elke werkdag om 05:15 Belgische tijd (03:15 UTC in de zomer / 04:15 UTC in de winter):
+# nieuwe bedrijven zoeken, websites beoordelen en duidelijke prospects in de mailreeks zetten.
+# De maildienst in Supabase verstuurt daarna tussen 08 en 18 uur.
+on:
+  schedule:
+    - cron: "15 3 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Droge run (niets wegschrijven of inplannen)"
+        type: boolean
+        default: true
+      target:
+        description: "Aantal nieuwe prospects (leeg = daglimiet uit Supabase)"
+        required: false
+        default: ""
+
+concurrency:
+  group: bloxflow-autopilot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install playwright==1.49.1 pillow==11.0.0
+          python -m playwright install --with-deps chromium
+      - name: Run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="--dry-run"; fi
+          if [ -n "${{ inputs.target }}" ]; then ARGS="$ARGS --target ${{ inputs.target }}"; fi
+          python autopilot/run.py $ARGS --minutes 300

@@ -1,0 +1,17 @@
+Future-focused replies to clear soft rejections
+
+Owner explicitly authorized automatic replies 30 minutes after inbound, 23 October 2026.
+Copy: 416 EUR per month for six months, no hosting cost, optional demo walkthrough in 20 minutes, future-focused closing, standard Bloxflow signature. No model/API cost for classification: conservative exact wording, leave unknown replies for human review.
+
+019_future_replies.sql adds a private queue and disabled feature flag. Deploy the bundled hvac-worker after migration, run auto-reply-database-tests.sql (rollback only), verify healthy minute ticks, then explicitly enable outreach_future_reply_settings with an activation timestamp. Never backfill old replies. Existing four Gmail drafts remain manual.
+
+At most one task per job and overlapping company identity, including cancelled/uncertain tasks. New inbound always stops the original three-email sequence. The separate acknowledgement does not restart it. Only recognized soft refusals; opt-outs, bounces, automated mail, ambiguous text and mixed questions are excluded. Exact-company/thread match and last sent message required. Recheck database suppression/new activity and Gmail thread/manual sent/drafts immediately before dispatch. Any draft in original thread cancels. SQL-enforced 30-minute minimum; actual execution at the next healthy minute tick, subject to capacity/pause. These are conversational replies and may be sent outside the cold outreach 08-18 workday window. Existing initial/followup window is unchanged.
+
+All replies share the existing total daily/rolling 24h cap and 60-second spacing. They never count as new first-contact companies. Stable Message-ID, lease-based reservation, dispatch-state-before-send and reconciliation prevent blind resends after uncertain delivery. No actual Gmail tests are dispatched by the SQL/Node test suites.
+
+Pause just these replies: UPDATE public.outreach_future_reply_settings SET enabled=false WHERE id;
+Inspect queue: SELECT status, count(*) FROM public.outreach_future_replies GROUP BY status;
+Regular replies remain visible in the existing inbox; sent acknowledgements are in Gmail Sent.
+
+Tests: node --test automation/engine.test.mjs automation/auto-reply.test.mjs
+Build: node automation/build.mjs

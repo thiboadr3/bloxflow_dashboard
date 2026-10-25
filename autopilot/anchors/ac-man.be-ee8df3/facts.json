@@ -1,0 +1,67 @@
+{
+ "input_url": "https://ac-man.be/",
+ "id": "",
+ "bedrijf": "",
+ "captured_at": "2026-10-23T20:32:00",
+ "final_url": "https://ac-man.be/",
+ "status": 200,
+ "ssl": true,
+ "loaded": true,
+ "page_type": "website",
+ "title": "Home | AC Man | Elektriciteit & Airco Overijse",
+ "lang": "nl-BE",
+ "generator": "",
+ "has_viewport_meta": true,
+ "text_chars": 19874,
+ "footer_year": 2026,
+ "internal_page_count": 15,
+ "internal_paths_sample": [
+  "/onze-diensten",
+  "/onze-projecten",
+  "/over",
+  "/contact",
+  "/offerte-aanvragen",
+  "/onze-diensten/airconditioning-warmtepompen",
+  "/onze-diensten/eletriciteitswerken",
+  "/onze-diensten/hernieuwbare-energie",
+  "/onze-diensten/inbraak-brandbeveiliging",
+  "/onze-diensten/laadpalen",
+  "/onze-diensten/ventilatie",
+  "/onze-projecten/energiezuinige-airconditioning-in-neerijse",
+  "/onze-projecten/zonnepaneleninstallatie-in-eizer",
+  "/home",
+  "/privacyverklaring"
+ ],
+ "nav_texts": [
+  "Onze diensten",
+  "Onze projecten",
+  "Over ons",
+  "Contact",
+  "Offerte aanvragen",
+  "Onze diensten",
+  "Onze projecten",
+  "Over ons",
+  "Contact",
+  "Offerte aanvragen"
+ ],
+ "has_form_home": false,
+ "has_tel": true,
+ "has_mailto": true,
+ "desktop_fold_cta": [
+  "contact",
+  "offerte aanvragen",
+  "vraag je offerte aan"
+ ],
+ "text_excerpt": "Onze diensten Onze projecten Over ons Contact Offerte aanvragen Jouw partner in comfort, energie en veiligheid AC Man is jouw lokale installateur voor elektriciteitswerken, airconditioning, hernieuwbare energie, laadpalen, ventilatie en inbraakbeveiliging. Wij helpen gezinnen en bedrijven met duurzame oplossingen, met aandacht voor kwaliteit en afwerking. Vraag je offerte aan Ontdek onze diensten Alles voor een comfortabele en energiezuinige woning Van een nieuwe elektrische installatie tot een slimme laadpaal of een airco die ook verwarmt. Je kan bij ons terecht voor nieuwbouw, renovatie, onderhoud en herstellingen. Zo heb je één betrouwbare partner voor alle technieken in en rond je woning. Airconditioning en warmtepompen AC Man helpt je met een passende oplossing voor comfortabel koelen en verwarmen. Lees meer Eletriciteitswerken Van klassieke installaties tot domotica, automatisatie en elektrische schema’s. Lees meer Hernieuwbare energie Ontdek de energieoplossingen van AC Man, afgestemd op je woning en verbruik. Lees meer Inbraak- en brandbeveiliging AC Man voorziet bekabeling voor inbraak- en brandbeveiliging en werkt samen met een gecertificeerde beveiligingsexpert voor je woning. Lees meer Laadpalen AC Man helpt je met een laadpaal of wandlader afgestemd op je aansluiting, vermogen en gebruik. Lees meer Ventilatie AC Man helpt je een ventilatieoplossing kiezen die past bij je woning, energienormen en budget. Lees meer Uit jouw regio We werken vooral in de Druivenstreek, waardoor we een snelle en persoonlijke service kunnen bieden. Echt vakmanschap Onze installaties worden geplaatst door een ervaren team met kennis van kwaliteit en duurzame technieken. Service en kwaliteit We laten elke werf of woning verzorgd achter, met respect voor jouw ruimte en planning. Een kleine ploeg met grote technische kennis AC Man, vroeger gekend als Electric Solutions, is een lokaal team van ervaren techniekers. Omdat de zaakvoerder mee op de werf staat, ben je zeker van persoonlijke opvolging en duidelijke communicatie. We geloven in duurzame installaties die vandaag goed werken en morgen nog steeds hun waarde bewijzen. Daarom kiezen we voor betrouwbare oplossingen, correcte plaatsing en service na installatie. Vraag een offerte aan Bekijk onze recente projecten Benieuwd hoe onze installaties eruitzien in de praktijk? In onze projecten tonen we recente realisaties rond elektriciteit, airconditioning, zonnepanelen, laadpalen, ventilatie en beveiliging. Bekijk onze proj",
+ "mobile_overflow_px": 0,
+ "mobile_fold_cta": [
+  "vraag je offerte aan"
+ ],
+ "mobile_fold_clickables": [
+  "vraag je offerte aan",
+  "ontdek onze diensten",
+  "voorkeuren wijzigen",
+  "alle cookies weigeren",
+  "alle cookies toestaan"
+ ]
+}

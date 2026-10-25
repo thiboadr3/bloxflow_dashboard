@@ -1,0 +1,63 @@
+{
+ "input_url": "https://www.sanitairacke.be/",
+ "id": "",
+ "bedrijf": "",
+ "captured_at": "2026-10-23T20:32:25",
+ "final_url": "https://www.sanitairacke.be/",
+ "status": 200,
+ "ssl": true,
+ "loaded": true,
+ "page_type": "website",
+ "title": "Sanitair Acke - Sanitair, elektriciteit & verwarming voor renovatie en nieuwbouw",
+ "lang": "",
+ "generator": "",
+ "has_viewport_meta": true,
+ "text_chars": 1000,
+ "footer_year": 2026,
+ "internal_page_count": 11,
+ "internal_paths_sample": [
+  "/home",
+  "/over-ons",
+  "/diensten",
+  "/referenties",
+  "/contact",
+  "/sanitair",
+  "/verwarming",
+  "/elektriciteit",
+  "/algemene-voorwaarden",
+  "/privacy-statement",
+  "/bedrijfsgegevens"
+ ],
+ "nav_texts": [
+  "HOME",
+  "OVER ONS",
+  "DIENSTEN",
+  "REFERENTIES",
+  "CONTACT"
+ ],
+ "has_form_home": false,
+ "has_tel": true,
+ "has_mailto": true,
+ "desktop_fold_cta": [
+  "contact",
+  "offerte aanvragen",
+  "spoedaanvraag",
+  "offerte aanvragen >"
+ ],
+ "text_excerpt": "HOME OVER ONS DIENSTEN REFERENTIES CONTACT Sanitair & verwarming voor uw nieuwbouwproject of renovatie! offerte aanvragen Advies en inspiratie Onze jarenlange ervaring gebruiken wij graag om u verder te helpen! alle referenties Dringende herstelling nodig? Contacteer ons, wij komen zo spoedig mogelijk! spoedaanvraag technische probleem of advies nodig? Bel ons: 056 41 84 84 0477 628 622 (Ruddy) / 0477 676 180 (Dieter) offerte aanvragen > NIEUWS • 2024-02-20 WERKNEMER GEZOCHT Werknemer gezocht! Regio Wevelgem Installaties sanitair/ verwarming, kennis elektriciteit is een pluspunt. Indien interesse, graag contact opnemen via 0477/676 180 of via mail info@sanitairacke.be Onze diensten Sanitair & centrale verwarming SANITAIR VERWARMING ELEKTRICITEIT © 1985 - 2026 ACKE bvba Algemene voorwaarden Privacy Statement Bedrijfsgegevens Goudbergstraat 63, 8560 WEVELGEM info@sanitairacke.be +32 (0)56 41 84 84 +32 (0)477 628 622 (Ruddy) +32 (0)477 676 180 (Dieter) Back to top",
+ "mobile_overflow_px": 0,
+ "mobile_fold_cta": [
+  "offerte aanvragen",
+  "spoedaanvraag",
+  "offerte aanvragen >"
+ ],
+ "mobile_fold_clickables": [
+  "offerte aanvragen",
+  "alle referenties",
+  "spoedaanvraag",
+  "056 41 84 84",
+  "0477 628 622",
+  "0477 676 180",
+  "offerte aanvragen >"
+ ]
+}

@@ -1,4 +1,5 @@
-import {OWNER,mime,headers,inbound} from './mail.js';
+import {considerFutureReply,processFutureReply} from './auto-reply.js';
+import {OWNER,CURRENT,mime,headers,inbound,versionFromSubject} from './mail.js';
 export class Gmail {
  constructor(token,fetcher=fetch){this.token=token;this.fetcher=fetcher;}
  async request(path,options={}){const response=await this.fetcher('https://gmail.googleapis.com/gmail/v1/users/me/'+path,{...options,headers:{Authorization:'Bearer '+this.token,'Content-Type':'application/json'},signal:AbortSignal.timeout(10000)});if(!response.ok){const error=Error('gmail_'+response.status);error.status=response.status;throw error;}return response.json();}
@@ -14,7 +15,7 @@ export class Engine {
  async runtime(){const rows=await this.result(this.db.from('outreach_runtime').select('*').eq('id',true));return rows[0];}
  async updateRuntime(values){const rows=await this.result(this.db.from('outreach_runtime').update(values).eq('id',true).eq('lease_token',this.token).gt('lease_until',new Date().toISOString()).select('id'));if(rows.length!==1)throw Error('lease_expired');}
  budget(){if(Date.now()-this.started>45000)throw Error('tick_time_budget');}
- async ingest(message,jobId=null){const parsed=inbound(message);if(parsed)await this.rpc('bloxflow_ingest_reply',{p_message:parsed,p_job:jobId});return parsed;}
+ async ingest(message,jobId=null){const parsed=inbound(message);if(parsed){await this.rpc('bloxflow_ingest_reply',{p_message:parsed,p_job:jobId});await considerFutureReply(this,message,parsed);}return parsed;}
  async sync(runtime){
   if(!runtime.history_id){
    let anchor=runtime.bootstrap_history;
@@ -46,13 +47,15 @@ export class Engine {
   for(const query of queries){let cursor;do{this.budget();const page=await this.gmail.list(query,cursor,25);for(const m of page.messages||[])await process(await this.gmail.message(m.id));cursor=page.nextPageToken;}while(cursor);}
   return !blocked;
  }
+ // Mail 2/3 volgen altijd de reeks van de mail 1 die al in de thread zit (oude threads krijgen de oude opvolgmails).
+ async sequenceVersion(job,step){if(step===1)return CURRENT;if(!job.thread_id)return 'v1';const thread=await this.gmail.thread(job.thread_id);const msgs=thread.messages||[];const first=msgs.find(m=>m.labelIds?.includes('SENT'))||msgs[0];return versionFromSubject(headers(first||{}).subject);}
  async run(){this.token=await this.rpc('bloxflow_worker_lock');if(!this.token)return {status:'busy'};
   try{
    const runtime=await this.runtime();const complete=await this.sync(runtime);if(!complete)return {status:'syncing'};
-   await this.reconcile();this.budget();const candidate=await this.rpc('bloxflow_reserve',{p_token:this.token});if(!candidate){await this.updateRuntime({last_error:null});return {status:'checked'};}
+   await this.reconcile();this.budget();if(await processFutureReply(this)){await this.updateRuntime({last_error:null});return {status:'future_reply_sent'};}this.budget();const candidate=await this.rpc('bloxflow_reserve',{p_token:this.token});if(!candidate){await this.updateRuntime({last_error:null});return {status:'checked'};}
    const {job,attempt}=candidate;
    try{if(!await this.preflight(job)){await this.result(this.db.from('outreach_attempts').update({state:'cancelled',error_code:'reply_found'}).eq('id',attempt.id).eq('state','reserved'));return {status:'reply_stopped'};}
-    this.budget();const raw=mime({to:job.recipient,step:attempt.step,messageId:attempt.message_id,parentId:job.parent_message_id});
+    this.budget();const version=await this.sequenceVersion(job,attempt.step);const raw=mime({to:job.recipient,step:attempt.step,messageId:attempt.message_id,parentId:job.parent_message_id,version});
     if(!await this.rpc('bloxflow_before_send',{p_token:this.token,p_attempt:attempt.id}))return {status:'blocked'};
     // Exactly one send call. Network failures/HTTP errors are never blindly retried.
     let sent;try{sent=await this.gmail.send(raw,job.thread_id);}catch{await this.result(this.db.from('outreach_attempts').update({state:'uncertain',error_code:'gmail_outcome_unknown'}).eq('id',attempt.id).eq('state','dispatching'));await this.result(this.db.from('outreach_jobs').update({status:'uncertain',stop_reason:'gmail_outcome_unknown'}).eq('id',job.id).eq('status','reserved'));throw Error('gmail_outcome_unknown');}
