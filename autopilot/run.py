@@ -20,6 +20,20 @@ from db import DB  # noqa: E402
 def log(*a):
     print(time.strftime("%H:%M:%S"), *a, flush=True)
 
+def notify(text):
+    """Stuurt een korte update naar Telegram (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID). Fouten worden genegeerd."""
+    token, chat = os.environ.get("TELEGRAM_BOT_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
+    if not token or not chat:
+        return
+    try:
+        import urllib.request
+        body = json.dumps({"chat_id": chat, "text": text[:4000], "disable_web_page_preview": True}).encode()
+        req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=body,
+                                     headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=20).read()
+    except Exception as e:
+        log("Telegram-melding mislukt:", type(e).__name__)
+
 def allocate(target, niches):
     total = sum(n["gewicht"] for n in niches)
     raw = [(n["sector"], target * n["gewicht"] / total) for n in niches]
@@ -60,6 +74,17 @@ async def capture_batch(rows, outdir):
         await asyncio.gather(*(one(r) for r in rows))
         await browser.close()
 
+def gemini_cost_line(tok):
+    """Werkelijke Gemini-kost van deze run uit usageMetadata. Prijzen in USD per miljoen tokens (env overschrijfbaar)."""
+    p_in = float(os.environ.get("GEMINI_PRICE_INPUT", "0.75"))
+    p_cache = float(os.environ.get("GEMINI_PRICE_CACHED", "0.075"))
+    p_out = float(os.environ.get("GEMINI_PRICE_OUTPUT", "3.75"))
+    fresh = max(tok["prompt"] - tok["cached"], 0)
+    usd = (fresh * p_in + tok["cached"] * p_cache + (tok["output"] + tok["thinking"]) * p_out) / 1e6
+    per = usd / tok["calls"] if tok["calls"] else 0
+    return (f"Gemini: {tok['calls']} oordelen, {fresh} nieuwe + {tok['cached']} gecachete inputtokens, "
+            f"{tok['output']} output + {tok['thinking']} denk-tokens = ${usd:.2f} (${per:.4f} per oordeel, excl. cache-opslag)")
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -91,6 +116,7 @@ def main():
         nc_names = [r["company_name"] for r in db.select("suppressions", "select=company_name&reason=eq.no_contact_agency") or [] if r.get("company_name")]
         if not nc_names:
             log("No-contactlijst ontbreekt in Supabase; piloot stopt uit voorzorg.")
+            notify("⛔ Piloot gestopt: de no-contactlijst ontbreekt in Supabase. Er werd niets ingepland.")
             return 1
     else:
         nc_file = Path(os.environ.get("NO_CONTACT_CSV", HERE.parent.parent / "screening" / "no-contact.csv"))
@@ -105,6 +131,8 @@ def main():
     counts = {k: 0 for k in ["zoekopdrachten", "gevonden", "al_gekend", "geen_email", "beoordeeld", "prospect", "twijfel", "niet_prospecteren", "buiten_niche", "ingepland", "no_contact", "fouten"]}
     per_sector = {n["sector"]: 0 for n in niches}
     examples = []
+    stops = {}
+    tok = {"prompt": 0, "cached": 0, "output": 0, "thinking": 0, "calls": 0}
 
     def record_candidate(c, decision, reasons, details=None, prospect_id=None):
         if db and not a.dry_run:
@@ -129,6 +157,9 @@ def main():
                 found = places.candidates(places_key, q)
             except Exception as e:
                 log("Places-fout", q, e); counts["fouten"] += 1
+                if ("403" in str(e) or "401" in str(e) or "429" in str(e)) and not stops.get("places"):
+                    stops["places"] = True
+                    notify(f"⚠️ Piloot: Google Places weigert ({str(e)[:120]}). Controleer sleutel/facturatie.")
                 if "403" in str(e) or "401" in str(e) or "429" in str(e):
                     break
                 continue
@@ -183,11 +214,20 @@ def main():
             with cf.ThreadPoolExecutor(4) as ex:
                 results = list(ex.map(do_judge, with_mail))
             for c, (dec, codes, reden, mo, usage) in zip(with_mail, results):
+                if usage:
+                    tok["calls"] += 1
+                    tok["prompt"] += int(usage.get("promptTokenCount") or 0)
+                    tok["cached"] += int(usage.get("cachedContentTokenCount") or 0)
+                    tok["output"] += int(usage.get("candidatesTokenCount") or 0)
+                    tok["thinking"] += int(usage.get("thoughtsTokenCount") or 0)
                 if dec == "fout":
                     counts["fouten"] += 1
                     log("Oordeel mislukt", c["website_url"], reden)
                     if "Spend cap" in reden or "PERMISSION_DENIED" in reden or "RESOURCE_EXHAUSTED" in reden:
                         log("Gemini-limiet bereikt; run stopt.")
+                        if not stops.get("gemini"):
+                            stops["gemini"] = True
+                            notify("⚠️ Piloot: Gemini-limiet bereikt (spend cap). De run stopt; verhoog de limiet in AI Studio / Cloud Billing.")
                         a.max_judged = 0
                     continue
                 counts["beoordeeld"] += 1
@@ -223,8 +263,15 @@ def main():
         "", "| Stap | Aantal |", "|---|---:|",
         *[f"| {k.replace('_', ' ')} | {v} |" for k, v in counts.items()],
         "", "Per sector: " + ", ".join(f"{s} {per_sector[s]}/{quota[s]}" for s in per_sector),
+        "", gemini_cost_line(tok),
         "", "Voorbeelden:", *examples])
     log("\n" + report)
+    per = ", ".join(f"{s} {per_sector[s]}/{quota[s]}" for s in per_sector)
+    status = "🟢" if counts["ingepland"] >= target else "🟡"
+    notify(f"{status} Piloot {time.strftime('%d/%m')}{' (droge run)' if a.dry_run else ''}: {counts['ingepland']} van {target} bedrijven klaar voor mail "
+           f"({mins} min).\nBeoordeeld: {counts['beoordeeld']} · prospect {counts.get('prospect', 0)} · twijfel {counts.get('twijfel', 0)} · "
+           f"goede site {counts.get('niet_prospecteren', 0)} · buiten niche {counts.get('buiten_niche', 0)} · fouten {counts['fouten']}\n"
+           f"Per sector: {per}\n{gemini_cost_line(tok)}")
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(report)
     if db and not a.dry_run:
