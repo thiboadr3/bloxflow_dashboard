@@ -1,0 +1,47 @@
+{
+ "input_url": "https://www.project-g.be/",
+ "id": "",
+ "bedrijf": "",
+ "captured_at": "2026-10-23T20:31:41",
+ "final_url": "https://www.project-g.be/",
+ "status": 200,
+ "ssl": true,
+ "loaded": true,
+ "page_type": "website",
+ "title": "Project G",
+ "lang": "nl-BE",
+ "generator": "",
+ "has_viewport_meta": true,
+ "text_chars": 1156,
+ "footer_year": 2025,
+ "internal_page_count": 4,
+ "internal_paths_sample": [
+  "/realisaties",
+  "/certificaten",
+  "/contact",
+  "/media"
+ ],
+ "nav_texts": [
+  "HOME",
+  "REALISATIES",
+  "CERTIFICATEN",
+  "CONTACT",
+  "MEDIA"
+ ],
+ "has_form_home": true,
+ "has_tel": false,
+ "has_mailto": true,
+ "desktop_fold_cta": [
+  "contact"
+ ],
+ "text_excerpt": "Deze website gebruikt cookies voor analyse-doeleinden en/of het tonen van advertenties. Door gebruik te blijven maken van de site gaat u hiermee akkoord. Akkoord Ga direct naar de hoofdinhoud PROJECT G HOME REALISATIES CERTIFICATEN CONTACT MEDIA Project G, opgericht in 2021, is van alle markten thuis. U kan bij ons terecht voor kleine en middelgrote klus- en renovatieprojecten. Project G streeft naar 100% klanttevredenheid en staat garant voor duidelijke en transparante communicatie. Door ons uitgebreid pakket aan specialisaties kan Project G uw projecten van A tot Z verzorgen. Contacteer ons zeker indien u een betrouwbare partner zoekt voor het uitvoeren van uw project. Schrijnwerk & bouw Ramen & deuren Leveren & plaatsen van keukens Maatwerk Dakwerken & EPDM Houtskeletbouw Renovatiewerken Gyprocwerken Elektriciteit & Energie Plaatsen elektriciteit Renovatie van bestaande installatie Elektrische schema's Zonnepanelen Thuisbatterijen Laadpalen Warmtepompen Elektro Herstellen van elektrotoestellen Leveren & plaatsen van nieuwe toestellen Facebook LinkedIn WhatsApp © 2025 Project G | Alle rechten voorbehouden",
+ "mobile_overflow_px": 0,
+ "mobile_fold_cta": [],
+ "mobile_fold_clickables": [
+  "akkoord",
+  "zoek binnen website",
+  "open / sluit menu",
+  "e-mailadres",
+  "facebook"
+ ]
+}
