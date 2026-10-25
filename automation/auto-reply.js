@@ -8,7 +8,7 @@ export function softRejection(text='') {
  if(top.length>1200||/uitschrij|unsubscribe|verwijder|niet meer|geen (?:verdere |volgende )?(?:mails|mailtjes|berichten)|stop|overleden|faill|gestopt|afwezig|automatisch|out of office|maar|wel interesse|bel me|bel ons|prijs\?|kost.*\?|demo.*\?/i.test(top))return false;
  const clean=top.split(/\n\s*(?:met vriendelijke|vriendelijke|mvg\b|groet|groetjes|sent from|verzonden vanaf)/i)[0]
  .replace(/^(?:(?:beste|hey|hallo|dag|goedemorgen|goedemiddag|goedenavond)[^\n]*\n\s*)/i,'').trim().replace(/\s+/g,' ');
- return /^(?:geen interesse[.!]?|(?:we|wij|ik) (?:hebben|heb) (?:momenteel |op dit moment |nu )?geen interesse[.!]?|(?:nee[, ]+)?(?:niet is )?niet nodig[.!]?|op dit moment niet[.!]?(?: bedankt[.!]?)?|ik ben tevreden over mijn website[.!]? ik heb geen nood aan een andere[.!]?)$/i.test(clean);
+ return /^(?:(?:we|wij|ik) (?:hebben|heb) (?:momenteel |op dit moment |nu )?geen interesse[.!]?|(?:nee[, ]+)?(?:niet is )?niet nodig[.!]?|op dit moment niet[.!]?(?: bedankt[.!]?)?|ik ben tevreden over mijn website[.!]? ik heb geen nood aan een andere[.!]?)$/i.test(clean);
 }
 export function replyCopy(name='') {
  return `Hey${name?' '+name:''},\n\nBedankt voor je reactie, geen probleem!\n\nMisschien handig om te weten voor de toekomst: voor een volledige website betaal je €416 per maand gedurende zes maanden.\n\nIk maak graag vrijblijvend een demo voor jullie bedrijf. Die kunnen we samen in 20 minuten bekijken, zonder voorbereiding of verplichtingen.\n\nLaat maar iets weten als je dit in de toekomst graag uitgewerkt ziet.\n\n${signature}`;

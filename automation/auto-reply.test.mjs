@@ -14,8 +14,8 @@ test('Uncertain delivery is never blindly retried',async()=>{const f=fake([{id:'
 
 test('Even an older draft in this thread prevents an automatic reply',async()=>{const f=fake([{id:'source'},{id:'draft',internalDate:'0',labelIds:['DRAFT']}]);await processFutureReply(f.e);assert.equal(f.calls.at(-1)[1].p_action,'cancel');});
 
-test('Bare no-interest reply is recognized, opt-out remains excluded',()=>{for(const t of ['Geen interesse','Geen interesse.','Geen interesse!'])assert.equal(softRejection(t),true);assert.equal(softRejection('Geen interesse, niet meer mailen'),false);});
 
-test('Bare no-interest reply is recognized, opt-out remains excluded',()=>{for(const t of ['Geen interesse','Geen interesse.','Geen interesse!','Beste,\n\nGeen interesse.\n\nMvg,\nJan'])assert.equal(softRejection(t),true);for(const t of ['Geen interesse, niet meer mailen','Geen interesse in dit, maar wel een demo','Geen interesse? Dan hoor ik het graag'])assert.equal(softRejection(t),false);});
+// Een kaal 'Geen interesse' krijgt (nog) geen automatisch antwoord: niet goedgekeurd door Thibo (25/10/2026).
+test('Bare no-interest reply is left for the owner, opt-out remains excluded',()=>{for(const t of ['Geen interesse','Geen interesse.','Geen interesse!','Beste,\n\nGeen interesse.\n\nMvg,\nJan'])assert.equal(softRejection(t),false);for(const t of ['Geen interesse, niet meer mailen','Geen interesse in dit, maar wel een demo','Geen interesse? Dan hoor ik het graag'])assert.equal(softRejection(t),false);});
 
 test('Future reply keeps the subject of the thread it answers',async()=>{const {unb64}=await import('./mail.js');const t={recipient:'a@b.be',parent_message_id:'<a@b>',message_id:'<c@d>'};assert.match(unb64(futureReplyMime(t,'Vraag over offertes')),/Subject: Re: Vraag over offertes/);assert.match(unb64(futureReplyMime(t,'Korte vraag over jullie website')),/Subject: Re: Korte vraag over jullie website/);assert.match(unb64(futureReplyMime(t,'evil\r\nBcc: x@y.be')),/Subject: Re: Korte vraag over jullie website\r\n/);});
