@@ -60,6 +60,17 @@ async def capture_batch(rows, outdir):
         await asyncio.gather(*(one(r) for r in rows))
         await browser.close()
 
+def gemini_cost_line(tok):
+    """Werkelijke Gemini-kost van deze run uit usageMetadata. Prijzen in USD per miljoen tokens (env overschrijfbaar)."""
+    p_in = float(os.environ.get("GEMINI_PRICE_INPUT", "0.75"))
+    p_cache = float(os.environ.get("GEMINI_PRICE_CACHED", "0.075"))
+    p_out = float(os.environ.get("GEMINI_PRICE_OUTPUT", "3.75"))
+    fresh = max(tok["prompt"] - tok["cached"], 0)
+    usd = (fresh * p_in + tok["cached"] * p_cache + (tok["output"] + tok["thinking"]) * p_out) / 1e6
+    per = usd / tok["calls"] if tok["calls"] else 0
+    return (f"Gemini: {tok['calls']} oordelen, {fresh} nieuwe + {tok['cached']} gecachete inputtokens, "
+            f"{tok['output']} output + {tok['thinking']} denk-tokens = ${usd:.2f} (${per:.4f} per oordeel, excl. cache-opslag)")
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -105,6 +116,7 @@ def main():
     counts = {k: 0 for k in ["zoekopdrachten", "gevonden", "al_gekend", "geen_email", "beoordeeld", "prospect", "twijfel", "niet_prospecteren", "buiten_niche", "ingepland", "no_contact", "fouten"]}
     per_sector = {n["sector"]: 0 for n in niches}
     examples = []
+    tok = {"prompt": 0, "cached": 0, "output": 0, "thinking": 0, "calls": 0}
 
     def record_candidate(c, decision, reasons, details=None, prospect_id=None):
         if db and not a.dry_run:
@@ -183,6 +195,12 @@ def main():
             with cf.ThreadPoolExecutor(4) as ex:
                 results = list(ex.map(do_judge, with_mail))
             for c, (dec, codes, reden, mo, usage) in zip(with_mail, results):
+                if usage:
+                    tok["calls"] += 1
+                    tok["prompt"] += int(usage.get("promptTokenCount") or 0)
+                    tok["cached"] += int(usage.get("cachedContentTokenCount") or 0)
+                    tok["output"] += int(usage.get("candidatesTokenCount") or 0)
+                    tok["thinking"] += int(usage.get("thoughtsTokenCount") or 0)
                 if dec == "fout":
                     counts["fouten"] += 1
                     log("Oordeel mislukt", c["website_url"], reden)
@@ -223,6 +241,7 @@ def main():
         "", "| Stap | Aantal |", "|---|---:|",
         *[f"| {k.replace('_', ' ')} | {v} |" for k, v in counts.items()],
         "", "Per sector: " + ", ".join(f"{s} {per_sector[s]}/{quota[s]}" for s in per_sector),
+        "", gemini_cost_line(tok),
         "", "Voorbeelden:", *examples])
     log("\n" + report)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
