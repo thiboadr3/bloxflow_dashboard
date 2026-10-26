@@ -167,6 +167,7 @@ def main():
             counts["gevonden"] += len(found)
             # 1. dedup
             fresh = []
+            todo = []
             for c in found:
                 c["sector"] = sector
                 hit = blocker.match(c["company_name"], c["website_url"])
@@ -174,9 +175,16 @@ def main():
                     counts["no_contact"] = counts.get("no_contact", 0) + 1
                     log(f"No-contact geblokkeerd: {c['company_name']} (lijst: {hit})")
                     continue
-                c["keys"] = db.identity_keys({"website_url": c["website_url"], "phone": c["phone"], "company_name": c["company_name"], "municipality": c["municipality"] or ""}) if db else local_keys(c)
-                reason = db.known(c["keys"], c["company_name"], c["place_id"]) if db else None
-                if reason:
+                todo.append(c)
+            # één database-call voor het hele zoekresultaat (sleutels + al gekend?)
+            if db:
+                checked = db.check([{"website_url": c["website_url"], "phone": c["phone"], "company_name": c["company_name"],
+                                     "municipality": c["municipality"] or "", "place_id": c["place_id"] or ""} for c in todo])
+            else:
+                checked = [{"keys": local_keys(c), "reason": None} for c in todo]
+            for c, chk in zip(todo, checked):
+                c["keys"] = chk["keys"]
+                if chk["reason"]:
                     counts["al_gekend"] += 1
                     continue
                 if any(set(c["keys"]) & set(f["keys"]) for f in fresh):
@@ -194,11 +202,22 @@ def main():
                     counts["geen_email"] += 1
                     record_candidate(c, "geen_email", "Geen publiek e-mailadres gevonden op de website")
                 else:
-                    c["keys"] = sorted(set(c["keys"]) | {"email:" + c["email"]})
-                    if db and db.known(c["keys"], c["company_name"], None):
-                        counts["al_gekend"] += 1
-                        continue
                     with_mail.append(c)
+            # tweede controle nu het e-mailadres gekend is, opnieuw in één call
+            if db and with_mail:
+                checked = db.check([{"website_url": c["website_url"], "phone": c["phone"], "company_name": c["company_name"],
+                                     "municipality": c["municipality"] or "", "email": c["email"]} for c in with_mail])
+                keep = []
+                for c, chk in zip(with_mail, checked):
+                    c["keys"] = chk["keys"]
+                    if chk["reason"]:
+                        counts["al_gekend"] += 1
+                    else:
+                        keep.append(c)
+                with_mail = keep
+            else:
+                for c in with_mail:
+                    c["keys"] = sorted(set(c["keys"]) | {"email:" + c["email"]})
             if not with_mail:
                 continue
             # 3. screenshots + feiten
