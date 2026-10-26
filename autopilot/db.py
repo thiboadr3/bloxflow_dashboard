@@ -61,6 +61,15 @@ class DB:
     def known(self, keys, name, place_id):
         return self.rpc("bloxflow_autopilot_known", p_keys=keys, p_name=name, p_place=place_id)
 
+    def backlog(self, sector, limit=40, exclude=()):
+        """Nog nooit gemailde bedrijven uit onze database (met website) die de piloot nog niet beoordeelde."""
+        return self.rpc("bloxflow_autopilot_backlog", p_sector=sector, p_limit=limit, p_exclude=list(exclude)) or []
+
+    def promote_prospect(self, prospect_id, record, run_id):
+        if self.dry_run:
+            return "droge-run"
+        return self.rpc("bloxflow_autopilot_promote", p_id=prospect_id, p=record, p_run=run_id)
+
     def insert_prospect(self, record, run_id):
         if self.dry_run:
             return "droge-run"

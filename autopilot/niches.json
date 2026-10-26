@@ -3,7 +3,7 @@
   "niches": [
     {
       "sector": "HVAC",
-      "gewicht": 25,
+      "gewicht": 18,
       "omschrijving": "installateur van verwarming, airco, warmtepompen, ventilatie of koeltechniek voor particulieren en kmo's",
       "zoektermen": [
         "airco installateur",
@@ -17,7 +17,7 @@
     },
     {
       "sector": "DAK & GEVEL",
-      "gewicht": 15,
+      "gewicht": 23,
       "omschrijving": "dakwerker, dakdekker, platte daken, gevelrenovatie of gevelbekleding",
       "zoektermen": [
         "dakwerker",
@@ -30,7 +30,7 @@
     },
     {
       "sector": "TUINAANLEG",
-      "gewicht": 15,
+      "gewicht": 12,
       "omschrijving": "tuinaanlegger, tuinarchitect, tuinonderhoud, bestrating, opritten of terrassen",
       "zoektermen": [
         "tuinaanlegger",
@@ -44,7 +44,7 @@
     },
     {
       "sector": "SCHRIJNWERK",
-      "gewicht": 15,
+      "gewicht": 13,
       "omschrijving": "schrijnwerker, ramen en deuren, maatwerk interieur, keukens op maat, trappen, poorten",
       "zoektermen": [
         "schrijnwerker",
@@ -58,7 +58,7 @@
     },
     {
       "sector": "RENOVATIE",
-      "gewicht": 15,
+      "gewicht": 17,
       "omschrijving": "renovatiebedrijf, algemene aannemer renovatie, badkamerrenovatie, vochtbestrijding, isolatie, binnenafwerking",
       "zoektermen": [
         "renovatiebedrijf",
@@ -72,7 +72,7 @@
     },
     {
       "sector": "METAALWERK",
-      "gewicht": 7,
+      "gewicht": 5,
       "omschrijving": "metaalconstructie, smeedwerk, inox of staalconstructies, trappen en balustrades in metaal, hekwerk",
       "zoektermen": [
         "metaalconstructie",
@@ -85,7 +85,7 @@
     },
     {
       "sector": "SOLAR",
-      "gewicht": 8,
+      "gewicht": 0,
       "omschrijving": "installateur van zonnepanelen, thuisbatterijen of laadpalen",
       "zoektermen": [
         "zonnepanelen installateur",
@@ -95,7 +95,7 @@
     },
     {
       "sector": "REINIGING",
-      "gewicht": 8,
+      "gewicht": 12,
       "omschrijving": "glazenwasser, ramenreiniging, gevelreiniging, dakreiniging of dakontmossing voor particulieren en kleine bedrijven; geen grote schoonmaak- of facilitybedrijven voor kantoren",
       "zoektermen": [
         "glazenwasser",
