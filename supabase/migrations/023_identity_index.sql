@@ -2,14 +2,21 @@
 -- berekend en opgeslagen (generated column) met een GIN-index, in plaats van bij elke controle
 -- voor alle ~11.000 rijen opnieuw. Gedrag blijft identiek: dezelfde functie, dezelfde velden.
 
+-- jsonb_build_object is niet IMMUTABLE gemarkeerd; deze wrapper wel (zelfde resultaat voor dezelfde invoer).
+create or replace function public.bloxflow_identity_keys_of(p_company text, p_website text, p_domain text, p_email text,
+  p_phone text, p_kbo text, p_municipality text) returns text[]
+language sql immutable set search_path = '' as $$
+  select public.bloxflow_identity_keys(jsonb_build_object('company_name',p_company,'website_url',p_website,
+    'normalized_domain',p_domain,'email',p_email,'phone',p_phone,'kbo_number',p_kbo,'municipality',p_municipality));
+$$;
+
 alter table public.prospects add column if not exists identity_keys text[] generated always as (
-  public.bloxflow_identity_keys(jsonb_build_object('company_name',company_name,'website_url',website_url,
-    'normalized_domain',normalized_domain,'email',email,'phone',phone,'kbo_number',kbo_number,'municipality',municipality))
+  public.bloxflow_identity_keys_of(company_name, website_url, normalized_domain, email, phone, kbo_number, municipality)
 ) stored;
 create index if not exists prospects_identity_keys on public.prospects using gin (identity_keys);
 
 alter table public.suppressions add column if not exists identity_keys text[] generated always as (
-  public.bloxflow_identity_keys(jsonb_build_object('email',email,'domain',domain,'kbo_number',kbo_number,'company_name',company_name))
+  public.bloxflow_identity_keys_of(company_name, null, domain, email, null, kbo_number, null)
 ) stored;
 alter table public.suppressions add column if not exists name_norm text generated always as (
   lower(regexp_replace(coalesce(company_name,''),'[^[:alnum:]]','','g'))

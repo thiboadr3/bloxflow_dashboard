@@ -61,6 +61,12 @@ begin
 end $$;
 revoke execute on function public.bloxflow_autopilot_tick() from public, anon, authenticated;
 
+-- Vandaag (dag van invoering) niet automatisch starten: de run van vandaag wordt handmatig gestart na de merge van PR #7.
+update public.outreach_notify_state
+  set last_dispatch = (now() at time zone 'Europe/Brussels')::date,
+      last_dispatch_check = (now() at time zone 'Europe/Brussels')::date
+  where id;
+
 select cron.schedule('bloxflow-autopilot-start', '*/15 * * * *', 'select public.bloxflow_autopilot_tick()');
 
 -- Voor run.py: hoeveel er vandaag al ingepland zijn (zodat een tweede run niets dubbel doet).
