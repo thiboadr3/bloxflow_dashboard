@@ -106,6 +106,14 @@ def main():
         log("Piloot staat UIT in Supabase (outreach_autopilot_settings.enabled=false). Niets gedaan.")
         return 0
     target = a.target or settings["daily_new_limit"]
+    if db and not a.dry_run and not a.target:
+        done = db.planned_today()
+        if done >= target:
+            log(f"Daglimiet vandaag al gehaald ({done}/{target}); niets te doen.")
+            return 0
+        if done:
+            log(f"Vandaag al {done} ingepland door een eerdere run; nog {target - done} te gaan.")
+            target -= done
     quota = allocate(target, niches)
     cursor = settings.get("cursor") or {}
     run_id = str(uuid.uuid4())

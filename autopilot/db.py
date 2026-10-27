@@ -49,6 +49,10 @@ class DB:
     def settings(self):
         return self.select("outreach_autopilot_settings", "id=eq.true&select=*")[0]
 
+    def planned_today(self):
+        """Aantal prospects dat de piloot vandaag (Belgische tijd) al inplande."""
+        return int(self.rpc("bloxflow_autopilot_planned_today") or 0)
+
     def identity_keys(self, record):
         return self.rpc("bloxflow_identity_keys", d=record)
 
