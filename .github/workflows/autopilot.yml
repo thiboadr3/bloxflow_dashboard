@@ -1,11 +1,13 @@
 name: Bloxflow piloot
 
-# Elke werkdag om 05:15 Belgische tijd (03:15 UTC in de zomer / 04:15 UTC in de winter):
-# nieuwe bedrijven zoeken, websites beoordelen en duidelijke prospects in de mailreeks zetten.
-# De maildienst in Supabase verstuurt daarna tussen 08 en 18 uur.
+# Elke werkdag start Supabase deze run om 04:00 Belgische tijd via de GitHub API (migratie 026),
+# want GitHub's eigen planner loopt vaak uren achter. De planning hieronder is enkel een reserve:
+# als de daglimiet al gehaald is, stopt die run meteen.
+# Nieuwe bedrijven zoeken, websites beoordelen en duidelijke prospects in de mailreeks zetten;
+# de maildienst in Supabase verstuurt daarna tussen 08 en 18 uur.
 on:
   schedule:
-    - cron: "15 3 * * 1-5"
+    - cron: "47 5 * * 1-5"
   workflow_dispatch:
     inputs:
       dry_run:

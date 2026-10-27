@@ -3,45 +3,108 @@
   "niches": [
     {
       "sector": "HVAC",
-      "gewicht": 25,
+      "gewicht": 18,
       "omschrijving": "installateur van verwarming, airco, warmtepompen, ventilatie of koeltechniek voor particulieren en kmo's",
-      "zoektermen": ["airco installateur", "warmtepomp installateur", "verwarmingsinstallateur", "chauffagist", "ventilatie installateur", "koeltechniek", "centrale verwarming onderhoud"]
+      "zoektermen": [
+        "airco installateur",
+        "warmtepomp installateur",
+        "verwarmingsinstallateur",
+        "chauffagist",
+        "ventilatie installateur",
+        "koeltechniek",
+        "centrale verwarming onderhoud"
+      ]
     },
     {
       "sector": "DAK & GEVEL",
-      "gewicht": 15,
-      "omschrijving": "dakwerker, dakdekker, platte daken, gevelrenovatie, gevelreiniging of gevelbekleding",
-      "zoektermen": ["dakwerker", "dakdekker", "platte daken", "gevelrenovatie", "gevelreiniging", "gevelbekleding", "zinkwerk dak"]
+      "gewicht": 23,
+      "omschrijving": "dakwerker, dakdekker, platte daken, gevelrenovatie of gevelbekleding",
+      "zoektermen": [
+        "dakwerker",
+        "dakdekker",
+        "platte daken",
+        "gevelrenovatie",
+        "gevelbekleding",
+        "zinkwerk dak"
+      ]
     },
     {
       "sector": "TUINAANLEG",
-      "gewicht": 15,
+      "gewicht": 12,
       "omschrijving": "tuinaanlegger, tuinarchitect, tuinonderhoud, bestrating, opritten of terrassen",
-      "zoektermen": ["tuinaanlegger", "tuinaannemer", "tuinonderhoud", "bestrating opritten", "terrasaanleg", "tuinarchitect", "omheiningen plaatsen"]
+      "zoektermen": [
+        "tuinaanlegger",
+        "tuinaannemer",
+        "tuinonderhoud",
+        "bestrating opritten",
+        "terrasaanleg",
+        "tuinarchitect",
+        "omheiningen plaatsen"
+      ]
     },
     {
       "sector": "SCHRIJNWERK",
-      "gewicht": 15,
+      "gewicht": 13,
       "omschrijving": "schrijnwerker, ramen en deuren, maatwerk interieur, keukens op maat, trappen, poorten",
-      "zoektermen": ["schrijnwerker", "ramen en deuren", "schrijnwerkerij maatwerk", "interieurbouw", "keukens op maat", "trappen op maat", "garagepoorten"]
+      "zoektermen": [
+        "schrijnwerker",
+        "ramen en deuren",
+        "schrijnwerkerij maatwerk",
+        "interieurbouw",
+        "keukens op maat",
+        "trappen op maat",
+        "garagepoorten"
+      ]
     },
     {
       "sector": "RENOVATIE",
-      "gewicht": 15,
+      "gewicht": 17,
       "omschrijving": "renovatiebedrijf, algemene aannemer renovatie, badkamerrenovatie, vochtbestrijding, isolatie, binnenafwerking",
-      "zoektermen": ["renovatiebedrijf", "renovatiewerken", "badkamerrenovatie", "vochtbestrijding", "isolatiewerken", "totaalrenovatie", "afwerking binnen"]
+      "zoektermen": [
+        "renovatiebedrijf",
+        "renovatiewerken",
+        "badkamerrenovatie",
+        "vochtbestrijding",
+        "isolatiewerken",
+        "totaalrenovatie",
+        "afwerking binnen"
+      ]
     },
     {
       "sector": "METAALWERK",
-      "gewicht": 7,
+      "gewicht": 5,
       "omschrijving": "metaalconstructie, smeedwerk, inox of staalconstructies, trappen en balustrades in metaal, hekwerk",
-      "zoektermen": ["metaalconstructie", "smeedwerk", "staalconstructie", "inox maatwerk", "balustrades metaal", "hekwerk metaal"]
+      "zoektermen": [
+        "metaalconstructie",
+        "smeedwerk",
+        "staalconstructie",
+        "inox maatwerk",
+        "balustrades metaal",
+        "hekwerk metaal"
+      ]
     },
     {
       "sector": "SOLAR",
-      "gewicht": 8,
+      "gewicht": 0,
       "omschrijving": "installateur van zonnepanelen, thuisbatterijen of laadpalen",
-      "zoektermen": ["zonnepanelen installateur", "thuisbatterij installateur", "laadpaal installateur"]
+      "zoektermen": [
+        "zonnepanelen installateur",
+        "thuisbatterij installateur",
+        "laadpaal installateur"
+      ]
+    },
+    {
+      "sector": "REINIGING",
+      "gewicht": 12,
+      "omschrijving": "glazenwasser, ramenreiniging, gevelreiniging, dakreiniging of dakontmossing voor particulieren en kleine bedrijven; geen grote schoonmaak- of facilitybedrijven voor kantoren",
+      "zoektermen": [
+        "glazenwasser",
+        "ramen wassen",
+        "glazenwasbedrijf",
+        "gevelreiniging",
+        "dakreiniging",
+        "dak ontmossen"
+      ]
     }
   ]
 }

@@ -41,8 +41,12 @@ def extract(page):
 def contact_links(base, page):
     links = []
     for href in re.findall(r'href=["\']([^"\'#]+)["\']', page, re.I):
-        u = urllib.parse.urljoin(base, href)
-        if domain_of(u) != domain_of(base) or re.search(r"\.(pdf|jpg|png|zip)$", u, re.I):
+        try:
+            u = urllib.parse.urljoin(base, href)
+            same = domain_of(u) == domain_of(base)
+        except ValueError:
+            continue
+        if not same or re.search(r"\.(pdf|jpg|png|zip)$", u, re.I):
             continue
         if any(h in u.lower() for h in CONTACT_HINTS) and u not in links:
             links.append(u)
@@ -58,6 +62,13 @@ def rank(email, site_domain):
     return score
 
 def find_email(website):
+    """Nooit een uitzondering: één rare website (bv. ongeldige link) mag de hele run niet laten crashen."""
+    try:
+        return _find_email(website)
+    except Exception:
+        return None, None
+
+def _find_email(website):
     try:
         base, page = fetch(website)
     except Exception:
