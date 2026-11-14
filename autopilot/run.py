@@ -154,104 +154,115 @@ def main():
             pos += 1
             q = f"{term} in {gem}"
             try:
-                found = places.candidates(places_key, q)
-            except Exception as e:
-                log("Places-fout", q, e); counts["fouten"] += 1
-                if ("403" in str(e) or "401" in str(e) or "429" in str(e)) and not stops.get("places"):
-                    stops["places"] = True
-                    notify(f"⚠️ Piloot: Google Places weigert ({str(e)[:120]}). Controleer sleutel/facturatie.")
-                if "403" in str(e) or "401" in str(e) or "429" in str(e):
-                    break
-                continue
-            counts["zoekopdrachten"] += 1
-            counts["gevonden"] += len(found)
-            # 1. dedup
-            fresh = []
-            for c in found:
-                c["sector"] = sector
-                hit = blocker.match(c["company_name"], c["website_url"])
-                if hit:
-                    counts["no_contact"] = counts.get("no_contact", 0) + 1
-                    log(f"No-contact geblokkeerd: {c['company_name']} (lijst: {hit})")
+                try:
+                    found = places.candidates(places_key, q)
+                except Exception as e:
+                    log("Places-fout", q, e); counts["fouten"] += 1
+                    if ("403" in str(e) or "401" in str(e) or "429" in str(e)) and not stops.get("places"):
+                        stops["places"] = True
+                        notify(f"⚠️ Piloot: Google Places weigert ({str(e)[:120]}). Controleer sleutel/facturatie.")
+                    if "403" in str(e) or "401" in str(e) or "429" in str(e):
+                        break
                     continue
-                c["keys"] = db.identity_keys({"website_url": c["website_url"], "phone": c["phone"], "company_name": c["company_name"], "municipality": c["municipality"] or ""}) if db else local_keys(c)
-                reason = db.known(c["keys"], c["company_name"], c["place_id"]) if db else None
-                if reason:
-                    counts["al_gekend"] += 1
-                    continue
-                if any(set(c["keys"]) & set(f["keys"]) for f in fresh):
-                    continue
-                fresh.append(c)
-            if not fresh:
-                continue
-            # 2. e-mail
-            with cf.ThreadPoolExecutor(8) as ex:
-                for c, (email, src) in zip(fresh, ex.map(lambda c: email_finder.find_email(c["website_url"]), fresh)):
-                    c["email"], c["email_src"] = email, src
-            with_mail = []
-            for c in fresh:
-                if not c["email"]:
-                    counts["geen_email"] += 1
-                    record_candidate(c, "geen_email", "Geen publiek e-mailadres gevonden op de website")
-                else:
-                    c["keys"] = sorted(set(c["keys"]) | {"email:" + c["email"]})
-                    if db and db.known(c["keys"], c["company_name"], None):
+                counts["zoekopdrachten"] += 1
+                counts["gevonden"] += len(found)
+                # 1. dedup
+                fresh = []
+                for c in found:
+                    c["sector"] = sector
+                    hit = blocker.match(c["company_name"], c["website_url"])
+                    if hit:
+                        counts["no_contact"] = counts.get("no_contact", 0) + 1
+                        log(f"No-contact geblokkeerd: {c['company_name']} (lijst: {hit})")
+                        continue
+                    c["keys"] = db.identity_keys({"website_url": c["website_url"], "phone": c["phone"], "company_name": c["company_name"], "municipality": c["municipality"] or ""}) if db else local_keys(c)
+                    reason = db.known(c["keys"], c["company_name"], c["place_id"]) if db else None
+                    if reason:
                         counts["al_gekend"] += 1
                         continue
-                    with_mail.append(c)
-            if not with_mail:
-                continue
-            # 3. screenshots + feiten
-            asyncio.run(capture_batch(with_mail, work))
-            # 4. oordeel
-            def do_judge(c):
-                d = work / capture.slug(c["website_url"])
-                f = json.loads((d / "facts.json").read_text()) if (d / "facts.json").exists() else {"loaded": False, "page_type": "laadt_niet"}
-                try:
-                    return judge.judge_for_pilot(gem_key, model, d, f, niche["omschrijving"], anchors, cache)
-                except Exception as e:
-                    return "fout", [], str(e)[:300], {}, {}
-            with cf.ThreadPoolExecutor(4) as ex:
-                results = list(ex.map(do_judge, with_mail))
-            for c, (dec, codes, reden, mo, usage) in zip(with_mail, results):
-                if usage:
-                    tok["calls"] += 1
-                    tok["prompt"] += int(usage.get("promptTokenCount") or 0)
-                    tok["cached"] += int(usage.get("cachedContentTokenCount") or 0)
-                    tok["output"] += int(usage.get("candidatesTokenCount") or 0)
-                    tok["thinking"] += int(usage.get("thoughtsTokenCount") or 0)
-                if dec == "fout":
-                    counts["fouten"] += 1
-                    log("Oordeel mislukt", c["website_url"], reden)
-                    if "Spend cap" in reden or "PERMISSION_DENIED" in reden or "RESOURCE_EXHAUSTED" in reden:
-                        log("Gemini-limiet bereikt; run stopt.")
-                        if not stops.get("gemini"):
-                            stops["gemini"] = True
-                            notify("⚠️ Piloot: Gemini-limiet bereikt (spend cap). De run stopt; verhoog de limiet in AI Studio / Cloud Billing.")
-                        a.max_judged = 0
+                    if any(set(c["keys"]) & set(f["keys"]) for f in fresh):
+                        continue
+                    fresh.append(c)
+                if not fresh:
                     continue
-                counts["beoordeeld"] += 1
-                counts[dec] = counts.get(dec, 0) + 1
-                pid = None
-                if dec == "prospect" and per_sector[sector] < quota[sector]:
-                    rec = {"sector": sector, "company_name": c["company_name"], "website_url": c["website_url"], "email": c["email"],
-                           "email_evidence_url": c["email_src"], "phone": c["phone"], "municipality": c["municipality"],
-                           "source_url": "https://www.google.com/maps/place/?q=place_id:" + (c["place_id"] or ""),
-                           "fit_reason": f"[{', '.join(codes)}] {reden}", "subniche": c["query"].split(" in ")[0],
-                           "assessment": {"codes": codes, "design_score": mo.get("design_score"), "mailhaak": mo.get("mailhaak"), "model": model}}
+                # 2. e-mail
+                with cf.ThreadPoolExecutor(8) as ex:
+                    for c, (email, src) in zip(fresh, ex.map(lambda c: email_finder.find_email(c["website_url"]), fresh)):
+                        c["email"], c["email_src"] = email, src
+                with_mail = []
+                for c in fresh:
+                    if not c["email"]:
+                        counts["geen_email"] += 1
+                        record_candidate(c, "geen_email", "Geen publiek e-mailadres gevonden op de website")
+                    else:
+                        c["keys"] = sorted(set(c["keys"]) | {"email:" + c["email"]})
+                        if db and db.known(c["keys"], c["company_name"], None):
+                            counts["al_gekend"] += 1
+                            continue
+                        with_mail.append(c)
+                if not with_mail:
+                    continue
+                # 3. screenshots + feiten
+                asyncio.run(capture_batch(with_mail, work))
+                # 4. oordeel
+                def do_judge(c):
+                    d = work / capture.slug(c["website_url"])
+                    f = json.loads((d / "facts.json").read_text()) if (d / "facts.json").exists() else {"loaded": False, "page_type": "laadt_niet"}
                     try:
-                        pid = db.insert_prospect(rec, run_id) if db else "geen-db"
+                        return judge.judge_for_pilot(gem_key, model, d, f, niche["omschrijving"], anchors, cache)
                     except Exception as e:
-                        log("Inplannen mislukt", c["company_name"], e); counts["fouten"] += 1
-                    if pid:
-                        counts["ingepland"] += 1
-                        per_sector[sector] += 1
-                        if len(examples) < 15:
-                            examples.append(f"- {c['company_name']} ({c['municipality']}, {sector}): {', '.join(codes)} — {c['website_url']}")
-                    elif db and not a.dry_run:
-                        log("Daglimiet bereikt of bedrijf intussen gekend.")
-                record_candidate(c, dec, reden, {"codes": codes, "design_score": mo.get("design_score")}, pid if pid not in ("droge-run", "geen-db") else None)
-            log(f"{q}: {len(found)} gevonden, {len(with_mail)} met e-mail beoordeeld — {sector} {per_sector[sector]}/{quota[sector]}")
+                        return "fout", [], str(e)[:300], {}, {}
+                with cf.ThreadPoolExecutor(4) as ex:
+                    results = list(ex.map(do_judge, with_mail))
+                for c, (dec, codes, reden, mo, usage) in zip(with_mail, results):
+                    if usage:
+                        tok["calls"] += 1
+                        tok["prompt"] += int(usage.get("promptTokenCount") or 0)
+                        tok["cached"] += int(usage.get("cachedContentTokenCount") or 0)
+                        tok["output"] += int(usage.get("candidatesTokenCount") or 0)
+                        tok["thinking"] += int(usage.get("thoughtsTokenCount") or 0)
+                    if dec == "fout":
+                        counts["fouten"] += 1
+                        log("Oordeel mislukt", c["website_url"], reden)
+                        if "Spend cap" in reden or "PERMISSION_DENIED" in reden or "RESOURCE_EXHAUSTED" in reden:
+                            log("Gemini-limiet bereikt; run stopt.")
+                            if not stops.get("gemini"):
+                                stops["gemini"] = True
+                                notify("⚠️ Piloot: Gemini-limiet bereikt (spend cap). De run stopt; verhoog de limiet in AI Studio / Cloud Billing.")
+                            a.max_judged = 0
+                        continue
+                    counts["beoordeeld"] += 1
+                    counts[dec] = counts.get(dec, 0) + 1
+                    pid = None
+                    if dec == "prospect" and per_sector[sector] < quota[sector]:
+                        rec = {"sector": sector, "company_name": c["company_name"], "website_url": c["website_url"], "email": c["email"],
+                               "email_evidence_url": c["email_src"], "phone": c["phone"], "municipality": c["municipality"],
+                               "source_url": "https://www.google.com/maps/place/?q=place_id:" + (c["place_id"] or ""),
+                               "fit_reason": f"[{', '.join(codes)}] {reden}", "subniche": c["query"].split(" in ")[0],
+                               "assessment": {"codes": codes, "design_score": mo.get("design_score"), "mailhaak": mo.get("mailhaak"), "model": model}}
+                        try:
+                            pid = db.insert_prospect(rec, run_id) if db else "geen-db"
+                        except Exception as e:
+                            log("Inplannen mislukt", c["company_name"], e); counts["fouten"] += 1
+                        if pid:
+                            counts["ingepland"] += 1
+                            per_sector[sector] += 1
+                            if len(examples) < 15:
+                                examples.append(f"- {c['company_name']} ({c['municipality']}, {sector}): {', '.join(codes)} — {c['website_url']}")
+                        elif db and not a.dry_run:
+                            log("Daglimiet bereikt of bedrijf intussen gekend.")
+                    record_candidate(c, dec, reden, {"codes": codes, "design_score": mo.get("design_score")}, pid if pid not in ("droge-run", "geen-db") else None)
+                log(f"{q}: {len(found)} gevonden, {len(with_mail)} met e-mail beoordeeld — {sector} {per_sector[sector]}/{quota[sector]}")
+            except Exception as e:
+                # Eén fout (netwerk, Supabase, Playwright, Gemini) mag de hele run niet meer stilleggen.
+                counts["fouten"] += 1
+                log("Zoekopdracht overgeslagen door fout", q, type(e).__name__, str(e)[:200])
+            # Cursor tussendoor bewaren, zodat een crash geen werk herhaalt.
+            if db and counts["zoekopdrachten"] % 10 == 0:
+                try:
+                    db.save_cursor({**cursor, sector: pos % len(combo_list)})
+                except Exception as e:
+                    log("Cursor bewaren mislukt", type(e).__name__)
         cursor[sector] = pos % len(combo_list)
         if db:
             db.save_cursor(cursor)
