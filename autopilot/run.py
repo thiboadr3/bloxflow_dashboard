@@ -143,15 +143,26 @@ def main():
             except Exception as e:
                 log("kandidaat loggen mislukt", e)
 
-    for niche in sorted(niches, key=lambda n: -n["gewicht"]):
+    total_w = sum(n["gewicht"] for n in niches)
+    for ronde, niche in [(r, n) for r in (1, 2) for n in sorted(niches, key=lambda n: -n["gewicht"])]:
         sector = niche["sector"]
         combo_list = combos(niche)
         pos = int(cursor.get(sector, 0))
+        # Ronde 1: elke sector krijgt een eerlijk deel van de zoekopdrachten en de tijd, zodat een
+        # uitgeputte sector (bv. HVAC, bijna alles al gekend) de andere niet meer verdringt.
+        # Ronde 2: wat overblijft gaat naar sectoren die hun quotum nog niet haalden.
+        q_budget = a.max_queries * niche["gewicht"] / total_w if ronde == 1 else a.max_queries
+        t_budget = a.minutes * 60 * niche["gewicht"] / total_w if ronde == 1 else a.minutes * 60
+        used, t_sector = 0, time.time()
         while per_sector[sector] < quota[sector]:
             if counts["zoekopdrachten"] >= a.max_queries or counts["beoordeeld"] >= a.max_judged or time.time() - t0 > a.minutes * 60:
                 break
+            if used >= q_budget or time.time() - t_sector > t_budget:
+                log(f"{sector}: deel van ronde {ronde} op ({used} zoekopdrachten, {per_sector[sector]}/{quota[sector]}), door naar volgende sector")
+                break
             term, gem = combo_list[pos % len(combo_list)]
             pos += 1
+            used += 1
             q = f"{term} in {gem}"
             try:
                 try:
@@ -257,12 +268,13 @@ def main():
                 # Eén fout (netwerk, Supabase, Playwright, Gemini) mag de hele run niet meer stilleggen.
                 counts["fouten"] += 1
                 log("Zoekopdracht overgeslagen door fout", q, type(e).__name__, str(e)[:200])
-            # Cursor tussendoor bewaren, zodat een crash geen werk herhaalt.
-            if db and counts["zoekopdrachten"] % 10 == 0:
-                try:
-                    db.save_cursor({**cursor, sector: pos % len(combo_list)})
-                except Exception as e:
-                    log("Cursor bewaren mislukt", type(e).__name__)
+            finally:
+                # Cursor tussendoor bewaren (ook na 'continue'), zodat een crash geen werk herhaalt.
+                if db and used % 10 == 0:
+                    try:
+                        db.save_cursor({**cursor, sector: pos % len(combo_list)})
+                    except Exception as e:
+                        log("Cursor bewaren mislukt", type(e).__name__)
         cursor[sector] = pos % len(combo_list)
         if db:
             db.save_cursor(cursor)
