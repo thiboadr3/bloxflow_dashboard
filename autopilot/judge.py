@@ -173,7 +173,9 @@ def decide(f, j):
             if fy and fy == CURRENT_YEAR - 1:
                 codes.append("footerjaar_vorig_jaar")
             return "prospect", codes, reden
-        return "twijfel", codes, "Design gedateerd (2/5) maar verder in orde. " + reden
+        # Beslissing Thibo 16/11: gedateerd design (2/5) is genoeg reden om te mailen.
+        codes.append("design_gedateerd")
+        return "prospect", codes, "Design gedateerd (2/5). " + reden
     return "niet_prospecteren", codes, f"Design {ds}/5, verzorgd. " + bew("design")
 
 def main():
