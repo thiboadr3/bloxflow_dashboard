@@ -85,6 +85,40 @@ def gemini_cost_line(tok):
     return (f"Gemini: {tok['calls']} oordelen, {fresh} nieuwe + {tok['cached']} gecachete inputtokens, "
             f"{tok['output']} output + {tok['thinking']} denk-tokens = ${usd:.2f} (${per:.4f} per oordeel, excl. cache-opslag)")
 
+def load_kbo(db, path):
+    """Bedrijven uit KBO Open Data per sector, hoofdactiviteit eerst.
+    Bron: Supabase-tabel kbo_bedrijven (niet in deze publieke repo, want er staan contactgegevens in).
+    Lokaal (--no-db) kan een CSV van kbo_extract.py gebruikt worden."""
+    out, rows = {}, []
+    if db:
+        off = 0
+        while True:
+            part = db.select("kbo_bedrijven", "select=kbo,sector,naam,website_url,email,telefoon,postcode,gemeente,hoofdactiviteit"
+                             f"&order=sector,hoofdactiviteit.desc,kbo&offset={off}&limit=1000") or []
+            rows += part
+            if len(part) < 1000:
+                break
+            off += 1000
+    elif path.exists():
+        rows = list(csv.DictReader(open(path, encoding="utf-8")))
+    for r in rows:
+        out.setdefault(r["sector"], []).append(r)
+    return out
+
+def kbo_candidates(rows):
+    """Zet KBO-rijen om naar hetzelfde formaat als places.candidates()."""
+    res = []
+    for r in rows:
+        nr = re.sub(r"[^0-9]", "", r["kbo"])
+        res.append({
+            "place_id": None, "company_name": r["naam"], "website_url": r["website_url"],
+            "phone": r.get("telefoon") or None, "address": None, "postcode": r["postcode"],
+            "municipality": r["gemeente"], "google_type": None, "query": "KBO " + r["sector"],
+            "kbo_email": r.get("email") or None,
+            "kbo_url": "https://kbopub.economie.fgov.be/kbopub/toonondernemingps.html?ondernemingsnummer=" + nr,
+        })
+    return res
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
@@ -101,6 +135,11 @@ def main():
     places_key = os.environ["GOOGLE_PLACES_API_KEY"]
     model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
     db = None if a.no_db else DB(dry_run=a.dry_run)
+    try:
+        kbo_rows = load_kbo(db, HERE / "kbo_bedrijven.csv")
+    except Exception as e:
+        log("KBO-lijst laden mislukt, alleen Places", type(e).__name__, str(e)[:200]); kbo_rows = {}
+    log("KBO-lijst:", ", ".join(f"{k} {len(v)}" for k, v in kbo_rows.items()) or "geen")
     settings = db.settings() if db else {"enabled": False, "daily_new_limit": 200, "cursor": {}}
     if db and not a.dry_run and not settings["enabled"]:
         log("Piloot staat UIT in Supabase (outreach_autopilot_settings.enabled=false). Niets gedaan.")
@@ -128,7 +167,7 @@ def main():
     log("Gemini-cache voor voorbeelden:", "actief" if cache else "niet beschikbaar")
     work = Path(a.workdir) / run_id
     work.mkdir(parents=True, exist_ok=True)
-    counts = {k: 0 for k in ["zoekopdrachten", "gevonden", "al_gekend", "geen_email", "beoordeeld", "prospect", "twijfel", "niet_prospecteren", "buiten_niche", "ingepland", "no_contact", "fouten"]}
+    counts = {k: 0 for k in ["zoekopdrachten", "gevonden", "al_gekend", "geen_email", "beoordeeld", "prospect", "twijfel", "niet_prospecteren", "buiten_niche", "ingepland", "no_contact", "fouten", "kbo_batches"]}
     per_sector = {n["sector"]: 0 for n in niches}
     examples = []
     stops = {}
@@ -196,13 +235,22 @@ def main():
             if used >= q_budget or time.time() - t_sector > t_budget:
                 log(f"{sector}: deel van ronde {ronde} op ({used} zoekopdrachten, {per_sector[sector]}/{quota[sector]}), door naar volgende sector")
                 break
-            term, gem = combo_list[pos % len(combo_list)]
-            pos += 1
-            used += 1
-            q = f"{term} in {gem}"
+            # Eerst de gratis KBO-lijst (bedrijven met eigen domein), pas daarna Google Places.
+            kbo_key = "KBO|" + sector
+            kbo_pos = int(cursor.get(kbo_key, 0))
+            is_kbo = kbo_pos < len(kbo_rows.get(sector, []))
+            if is_kbo:
+                batch = kbo_rows[sector][kbo_pos:kbo_pos + 20]
+                cursor[kbo_key] = kbo_pos + len(batch)
+                q = f"KBO {sector} {kbo_pos}-{kbo_pos + len(batch)}"
+            else:
+                term, gem = combo_list[pos % len(combo_list)]
+                pos += 1
+                used += 1
+                q = f"{term} in {gem}"
             try:
                 try:
-                    found = places.candidates(places_key, q)
+                    found = kbo_candidates(batch) if is_kbo else places.candidates(places_key, q)
                 except Exception as e:
                     log("Places-fout", q, e); counts["fouten"] += 1
                     if ("403" in str(e) or "401" in str(e) or "429" in str(e)) and not stops.get("places"):
@@ -211,7 +259,7 @@ def main():
                     if "403" in str(e) or "401" in str(e) or "429" in str(e):
                         break
                     continue
-                counts["zoekopdrachten"] += 1
+                counts["kbo_batches" if is_kbo else "zoekopdrachten"] += 1
                 counts["gevonden"] += len(found)
                 # 1. dedup
                 fresh = []
@@ -236,6 +284,10 @@ def main():
                 with cf.ThreadPoolExecutor(8) as ex:
                     for c, (email, src) in zip(fresh, ex.map(lambda c: email_finder.find_email(c["website_url"]), fresh)):
                         c["email"], c["email_src"] = email, src
+                    # Voorkeur voor het (meestal algemene) adres op de website; KBO-adres enkel als terugval.
+                    for c in fresh:
+                        if not c["email"] and c.get("kbo_email"):
+                            c["email"], c["email_src"] = c["kbo_email"], c["kbo_url"]
                 with_mail = []
                 for c in fresh:
                     if not c["email"]:
@@ -284,7 +336,7 @@ def main():
                     if dec == "prospect" and per_sector[sector] < quota[sector]:
                         rec = {"sector": sector, "company_name": c["company_name"], "website_url": c["website_url"], "email": c["email"],
                                "email_evidence_url": c["email_src"], "phone": c["phone"], "municipality": c["municipality"],
-                               "source_url": "https://www.google.com/maps/place/?q=place_id:" + (c["place_id"] or ""),
+                               "source_url": c.get("kbo_url") or "https://www.google.com/maps/place/?q=place_id:" + (c["place_id"] or ""),
                                "fit_reason": f"[{', '.join(codes)}] {reden}", "subniche": c["query"].split(" in ")[0],
                                "assessment": {"codes": codes, "design_score": mo.get("design_score"), "mailhaak": mo.get("mailhaak"), "model": model}}
                         try:
@@ -306,7 +358,7 @@ def main():
                 log("Zoekopdracht overgeslagen door fout", q, type(e).__name__, str(e)[:200])
             finally:
                 # Cursor tussendoor bewaren (ook na 'continue'), zodat een crash geen werk herhaalt.
-                if db and used % 10 == 0:
+                if db and (is_kbo or used % 10 == 0):
                     try:
                         db.save_cursor({**cursor, sector: pos % len(combo_list)})
                     except Exception as e:
