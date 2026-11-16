@@ -143,6 +143,42 @@ def main():
             except Exception as e:
                 log("kandidaat loggen mislukt", e)
 
+    # Achterstand: sites die vroeger als 'twijfel' (design 2/5) werden beoordeeld, worden nu ook gemaild.
+    # Eerst die inplannen (geen zoekopdrachten of Gemini nodig), daarna pas nieuwe bedrijven zoeken.
+    if db and not a.dry_run:
+        try:
+            oud = db.select("outreach_autopilot_candidates",
+                            "select=id,company_name,website_url,sector,identity_keys,reasons,details"
+                            "&decision=eq.twijfel&prospect_id=is.null&reasons=like.Design%20gedateerd*"
+                            "&order=created_at.desc&limit=1000") or []
+        except Exception as e:
+            log("Achterstand ophalen mislukt", type(e).__name__, str(e)[:200]); oud = []
+        gezien = set()
+        for r in oud:
+            sector = r.get("sector")
+            if sector not in quota or per_sector[sector] >= quota[sector]:
+                continue
+            email = next((k[6:] for k in (r.get("identity_keys") or []) if k.startswith("email:")), None)
+            if not email or (r.get("website_url") or "").lower() in gezien:
+                continue
+            gezien.add((r.get("website_url") or "").lower())
+            rec = {"sector": sector, "company_name": r["company_name"], "website_url": r["website_url"], "email": email,
+                   "email_evidence_url": r["website_url"], "phone": None, "municipality": None,
+                   "source_url": r["website_url"], "fit_reason": "[design_gedateerd] " + (r.get("reasons") or "")[:1900],
+                   "subniche": None, "assessment": {"codes": ["design_gedateerd"], "design_score": 2, "bron": "twijfel_achterstand", "model": model}}
+            try:
+                pid = db.insert_prospect(rec, run_id)
+            except Exception as e:
+                log("Achterstand inplannen mislukt", r["company_name"], str(e)[:150]); counts["fouten"] += 1; continue
+            if pid:
+                counts["ingepland"] += 1; counts["achterstand"] = counts.get("achterstand", 0) + 1
+                per_sector[sector] += 1
+                try:
+                    db.update("outreach_autopilot_candidates", f"id=eq.{r['id']}", {"decision": "prospect", "prospect_id": pid})
+                except Exception:
+                    pass
+        log(f"Achterstand twijfel (2/5): {counts.get('achterstand', 0)} ingepland")
+
     total_w = sum(n["gewicht"] for n in niches)
     for ronde, niche in [(r, n) for r in (1, 2) for n in sorted(niches, key=lambda n: -n["gewicht"])]:
         sector = niche["sector"]
